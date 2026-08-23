@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Gerencial - Distribuidora de Bebidas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Urbanist', 'sans-serif'] } } } };
+        const SUPABASE_URL = 'https://gkpskpofglirwyasqaxs.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_PZt7RlKmHgq7Jjjuhf4tYQ_Sd2iVqQl';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    </script>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col justify-between text-slate-800">
+
+    <!-- HEADER / MENU DE ABAS -->
+    <header class="bg-white shadow-sm border-b border-slate-200 px-6 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div id="header-logo-container" class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden shadow-sm">
+                    <img src="logo.png" alt="Logo" class="w-full h-full object-contain logo-img" onerror="this.src='https://via.placeholder.com/150?text=Logo'">
+                </div>
+                <div>
+                    <h1 class="font-bold text-base text-slate-900 leading-tight">Distribuidora de Bebidas</h1>
+                    <p class="text-xs text-indigo-600 font-semibold">Painel Integrado de Gestão</p>
+                </div>
+            </div>
+
+            <!-- Abas de Navegação -->
+            <nav class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+                <button onclick="mudarAba('caixa')" id="btn-aba-caixa" class="px-4 py-2 rounded-lg text-xs font-bold transition bg-white text-indigo-600 shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-cash-register"></i> Frente de Caixa
+                </button>
+                <button onclick="mudarAba('financeiro')" id="btn-aba-financeiro" class="px-4 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-wallet"></i> Financeiro
+                </button>
+                <button onclick="mudarAba('estoque')" id="btn-aba-estoque" class="px-4 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-stacked"></i> Estoque
+                </button>
+            </nav>
+
+            <div class="text-right hidden sm:block">
+                <div id="relogio" class="text-sm font-bold text-indigo-600 font-mono">00:00:00</div>
+                <div id="data-atual" class="text-[10px] text-slate-400 font-medium">Carregando...</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO DAS ABAS -->
+    <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow">
+
+        <!-- ABA 1: FRENTE DE CAIXA -->
+        <section id="aba-caixa" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-7 flex flex-col gap-4">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Buscar Produto</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" id="busca-pdv" oninput="filtrarProdutosPDV()" placeholder="Digite o nome da bebida..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-600 text-sm bg-slate-50">
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex-grow">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Produtos Cadastrados / Atalhos</h3>
+                    <div id="grid-produtos-pdv" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1">
+                        <!-- Carregado via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+                        <h2 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-cart-shopping text-indigo-600"></i> Comanda Atual
+                        </h2>
+                        <span id="contador-itens" class="text-xs font-bold bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full">0 itens</span>
+                    </div>
+                    <div id="lista-carrinho" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        <p class="text-xs text-slate-400 text-center py-8">Nenhum produto adicionado ainda.</p>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-4 mt-4 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold text-slate-500">Total a Pagar:</span>
+                        <span id="valor-total" class="text-2xl font-extrabold text-slate-900">R$ 0,00</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="btn-PIX" onclick="escolherPagamento('PIX')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-sm border-2 border-transparent"><i class="fa-solid fa-qrcode"></i> PIX</button>
+                        <button id="btn-Dinheiro" onclick="escolherPagamento('Dinheiro')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-xl ring-4 ring-emerald-300/80 border-2 border-white scale-[1.02]"><i class="fa-solid fa-money-bill-wave"></i> Dinheiro</button>
+                        <button id="btn-Cartão" onclick="escolherPagamento('Cartão')" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-sm border-2 border-transparent"><i class="fa-solid fa-credit-card"></i> Cartão</button>
+                        <button id="btn-Fiado" onclick="escolherPagamento('Fiado')" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-sm border-2 border-transparent"><i class="fa-solid fa-book"></i> Fiado</button>
+                        <button id="btn-Misto" onclick="escolherPagamento('Misto')" class="col-span-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-sm border-2 border-transparent"><i class="fa-solid fa-split"></i> Pagamento Misto (Dividido)</button>
+                    </div>
+
+                    <button id="btn-concluir-venda" onclick="finalizarVendaGeral()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-md flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-check-circle"></i> Concluir / Lançar Venda
+                    </button>
+                    <button onclick="limparCarrinho()" class="w-full text-center text-xs text-red-500 hover:text-red-700 font-semibold pt-1">Cancelar / Limpar Comanda</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 2: FINANCEIRO -->
+        <section id="aba-financeiro" class="hidden space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-wallet"></i></div>
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Faturamento (Entrada)</span>
+                        <span id="card-entrada" class="text-2xl font-extrabold text-slate-900">R$ 0,00</span>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Despesas (Saída)</span>
+                        <span id="card-saida" class="text-2xl font-extrabold text-slate-900">R$ 0,00</span>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-chart-line"></i></div>
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Lucro Líquido</span>
+                        <span id="card-lucro" class="text-2xl font-extrabold text-indigo-600">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FILTROS E RELATÓRIO DO FINANCEIRO -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <div class="flex flex-col">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Filtrar por Período</label>
+                        <select id="filtro-tipo-periodo" onchange="alternarTipoFiltroPeriodo()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 focus:outline-none focus:border-indigo-600">
+                            <option value="geral">Geral (Todos os Meses)</option>
+                            <option value="mes">Mês Específico</option>
+                            <option value="custom">Personalizado (Data a Data)</option>
+                        </select>
+                    </div>
+
+                    <!-- Seletor de Mês -->
+                    <div id="bloco-filtro-mes" class="hidden flex flex-col">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Selecione o Mês</label>
+                        <input type="month" id="filtro-mes-ano" onchange="carregarFinanceiro()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 focus:outline-none focus:border-indigo-600">
+                    </div>
+
+                    <!-- Seletor Customizado -->
+                    <div id="bloco-filtro-custom" class="hidden flex items-center gap-2">
+                        <div class="flex flex-col">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Data Inicial</label>
+                            <input type="date" id="filtro-data-inicio" onchange="carregarFinanceiro()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 focus:outline-none focus:border-indigo-600">
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Data Final</label>
+                            <input type="date" id="filtro-data-fim" onchange="carregarFinanceiro()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 focus:outline-none focus:border-indigo-600">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                    <button onclick="gerarRelatorioFinanceiroPDF()" class="bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> Baixar / Imprimir Relatório
+                    </button>
+                    <button onclick="abrirModalFinanceiro()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Novo Lançamento
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="p-4">Data</th>
+                            <th class="p-4">Tipo</th>
+                            <th class="p-4">Descrição</th>
+                            <th class="p-4">Categoria</th>
+                            <th class="p-4 text-right">Valor</th>
+                            <th class="p-4 text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-financeiro" class="divide-y divide-slate-100 text-xs font-medium text-slate-700"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ABA 3: ESTOQUE -->
+        <section id="aba-estoque" class="hidden space-y-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+                <div class="relative w-96">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="busca-estoque" oninput="filtrarEstoque()" placeholder="Pesquisar produto no estoque..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-600 text-xs bg-slate-50">
+                </div>
+                <button onclick="abrirModalNovoProduto()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Cadastrar Novo Produto
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="p-4">Produto</th>
+                            <th class="p-4">Categoria</th>
+                            <th class="p-4">Qtd. Estoque</th>
+                            <th class="p-4">Preço Custo</th>
+                            <th class="p-4">Preço Venda</th>
+                            <th class="p-4 text-center">Status</th>
+                            <th class="p-4 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-estoque" class="divide-y divide-slate-100 text-xs font-medium text-slate-700"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL DINHEIRO / TROCO -->
+    <div id="modal-dinheiro" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl space-y-4 border border-slate-200">
+            <h3 class="font-bold text-slate-900 text-lg flex items-center gap-2"><i class="fa-solid fa-money-bill-wave text-emerald-600"></i> Pagamento em Dinheiro</h3>
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold text-slate-500">Valor Total da Compra:</label>
+                <div id="modal-valor-total" class="text-xl font-bold text-slate-800">R$ 0,00</div>
+            </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Quanto o cliente deu em dinheiro?</label>
+                <input type="number" id="input-recebido" step="0.01" placeholder="Ex: 50.00" oninput="calcularTroco()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-emerald-600 text-base font-bold text-slate-800 bg-slate-50">
+            </div>
+            <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl space-y-1">
+                <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider block">Troco a devolver:</span>
+                <div id="display-troco" class="text-2xl font-black text-emerald-600">R$ 0,00</div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="fecharModalDinheiro()" class="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition">Voltar</button>
+                <button id="btn-confirmar-dinheiro" onclick="confirmarDinheiro()" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm">Confirmar Venda</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FINANCEIRO -->
+    <div id="modal-financeiro" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl space-y-4 border border-slate-200">
+            <h3 class="font-bold text-slate-900 text-lg flex items-center gap-2"><i class="fa-solid fa-file-invoice-dollar text-indigo-600"></i> Novo Lançamento Financeiro</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Tipo de Movimento</label>
+                    <select id="lanc-tipo" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                        <option value="entrada">Entrada (Receita)</option>
+                        <option value="saida">Saída (Despesa)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Descrição</label>
+                    <input type="text" id="lanc-desc" placeholder="Ex: Conta de Luz" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Categoria</label>
+                        <select id="lanc-cat" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                            <option>Reposição Estoque</option>
+                            <option>Despesas Fixas</option>
+                            <option>Aluguel</option>
+                            <option>Vendas Balcão</option>
+                            <option>Outros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Valor (R$)</label>
+                        <input type="number" id="lanc-valor" step="0.01" placeholder="0.00" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="fecharModalFinanceiro()" class="w-1/2 bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs">Cancelar</button>
+                <button onclick="salvarLancamento()" class="w-1/2 bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PRODUTO ESTOQUE (CADASTRO / EDIÇÃO) -->
+    <div id="modal-produto" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl space-y-4 border border-slate-200">
+            <h3 id="modal-produto-titulo" class="font-bold text-slate-900 text-lg flex items-center gap-2"><i class="fa-solid fa-box text-indigo-600"></i> Cadastrar Produto</h3>
+            <input type="hidden" id="input-produto-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nome do Produto</label>
+                    <input type="text" id="input-nome" placeholder="Ex: Cerveja 600ml" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Categoria</label>
+                        <select id="input-categoria" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                            <option>Cervejas</option>
+                            <option>Refrigerantes</option>
+                            <option>Águas e Sucos</option>
+                            <option>Gelo e Carvão</option>
+                            <option>Destilados</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Qtd. Estoque</label>
+                        <input type="number" id="input-qtd" placeholder="0" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Preço Custo (R$)</label>
+                        <input type="number" id="input-custo" step="0.01" placeholder="0.00" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Preço Venda (R$)</label>
+                        <input type="number" id="input-venda" step="0.01" placeholder="0.00" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="fecharModalProduto()" class="w-1/2 bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs">Cancelar</button>
+                <button onclick="salvarProduto()" class="w-1/2 bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-400">
+        Sistema Caixa Distribuidora &copy; 2026
+    </footer>
+
+    <!-- SCRIPTS DE CONTROLE -->
+    <script>
+        let carrinho = [];
+        let produtosPDV = [];
+        let listaEstoqueGlobal = [];
+        let formaPagamentoSelecionada = 'Dinheiro';
+        let valorTotalGlobal = 0;
+        let isProcessandoVenda = false; // Trava anti-duplo clique
+
+        function atualizarRelogio() {
+            const agora = new Date();
+            const relogioEl = document.getElementById('relogio');
+            const dataEl = document.getElementById('data-atual');
+            if(relogioEl) relogioEl.textContent = agora.toLocaleTimeString('pt-BR');
+            if(dataEl) dataEl.textContent = agora.toLocaleDateString('pt-BR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+        }
+        setInterval(atualizarRelogio, 1000);
+        atualizarRelogio();
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const dataHoje = new Date();
+            const ano = dataHoje.getFullYear();
+            const mes = String(dataHoje.getMonth() + 1).padStart(2, '0');
+            const inputMes = document.getElementById('filtro-mes-ano');
+            if(inputMes) inputMes.value = `${ano}-${mes}`;
+
+            carregarPDV();
+            carregarFinanceiro();
+            carregarEstoque();
+        });
+
+        function mudarAba(aba) {
+            document.getElementById('aba-caixa').classList.add('hidden');
+            document.getElementById('aba-financeiro').classList.add('hidden');
+            document.getElementById('aba-estoque').classList.add('hidden');
+
+            document.getElementById('btn-aba-caixa').className = "px-4 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-2";
+            document.getElementById('btn-aba-financeiro').className = "px-4 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-2";
+            document.getElementById('btn-aba-estoque').className = "px-4 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-2";
+
+            if (aba === 'caixa') {
+                document.getElementById('aba-caixa').classList.remove('hidden');
+                document.getElementById('btn-aba-caixa').className = "px-4 py-2 rounded-lg text-xs font-bold transition bg-white text-indigo-600 shadow-sm flex items-center gap-2";
+                carregarPDV();
+            } else if (aba === 'financeiro') {
+                document.getElementById('aba-financeiro').classList.remove('hidden');
+                document.getElementById('btn-aba-financeiro').className = "px-4 py-2 rounded-lg text-xs font-bold transition bg-white text-indigo-600 shadow-sm flex items-center gap-2";
+                carregarFinanceiro();
+            } else if (aba === 'estoque') {
+                document.getElementById('aba-estoque').classList.remove('hidden');
+                document.getElementById('btn-aba-estoque').className = "px-4 py-2 rounded-lg text-xs font-bold transition bg-white text-indigo-600 shadow-sm flex items-center gap-2";
+                carregarEstoque();
+            }
+        }
+
+        // --- FRENTE DE CAIXA ---
+        async function carregarPDV() {
+            const { data, error } = await sb.from('produtos').select('*').order('nome', { ascending: true });
+            if (error) { console.error(error); return; }
+            produtosPDV = data || [];
+            renderizarProdutosPDV(produtosPDV);
+        }
+
+        function renderizarProdutosPDV(lista) {
+            const grid = document.getElementById('grid-produtos-pdv');
+            if(!grid) return;
+            grid.innerHTML = '';
+            if (!lista || lista.length === 0) {
+                grid.innerHTML = `<p class="col-span-3 text-center text-slate-400 py-4 text-xs">Nenhum produto encontrado.</p>`;
+                return;
+            }
+            lista.forEach(prod => {
+                const qtd = prod.estoque ?? prod.qtd ?? 0;
+                const preco = Number(prod.preco_venda || 0);
+                grid.innerHTML += `
+                    <button onclick="adicionarAoCarrinhoPorId(${prod.id})" class="bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 p-3 rounded-xl text-left transition flex flex-col justify-between h-24 group">
+                        <div>
+                            <span class="font-bold text-slate-700 text-sm group-hover:text-indigo-600 truncate block">${prod.nome}</span>
+                            <span class="text-[10px] text-slate-400">${qtd} em estoque</span>
+                        </div>
+                        <div class="flex justify-between items-center w-full">
+                            <span class="text-xs font-extrabold text-indigo-600">R$ ${preco.toFixed(2).replace('.', ',')}</span>
+                            <i class="fa-solid fa-plus text-xs text-slate-400 group-hover:text-indigo-600"></i>
+                        </div>
+                    </button>
+                `;
+            });
+        }
+
+        function filtrarProdutosPDV() {
+            const termo = document.getElementById('busca-pdv').value.toLowerCase();
+            const filtrados = produtosPDV.filter(p => p.nome.toLowerCase().includes(termo) || p.categoria.toLowerCase().includes(termo));
+            renderizarProdutosPDV(filtrados);
+        }
+
+        function adicionarAoCarrinhoPorId(id) {
+            const produto = produtosPDV.find(p => p.id === id);
+            if (!produto) return;
+            const estoqueAtual = produto.estoque ?? produto.qtd ?? 0;
+            
+            const item = carrinho.find(i => i.id === id);
+            if (item) {
+                if(item.qtd < estoqueAtual) item.qtd++;
+                else alert('Estoque insuficiente!');
+            } else {
+                if(estoqueAtual > 0) {
+                    carrinho.push({ id: produto.id, nome: produto.nome, preco: Number(produto.preco_venda || 0), qtd: 1, estoqueMax: estoqueAtual });
+                } else {
+                    alert('Produto sem estoque!');
+                }
+            }
+            atualizarCarrinhoUI();
+        }
+
+        function alterarQtd(index, delta) {
+            carrinho[index].qtd += delta;
+            if (carrinho[index].qtd <= 0) carrinho.splice(index, 1);
+            atualizarCarrinhoUI();
+        }
+
+        function atualizarCarrinhoUI() {
+            const lista = document.getElementById('lista-carrinho');
+            const contador = document.getElementById('contador-itens');
+            const totalEl = document.getElementById('valor-total');
+            if(!lista) return;
+
+            if (carrinho.length === 0) {
+                lista.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">Nenhum produto adicionado ainda.</p>';
+                contador.textContent = '0 itens';
+                totalEl.textContent = 'R$ 0,00';
+                valorTotalGlobal = 0;
+                return;
+            }
+
+            let html = '';
+            let totalGeral = 0;
+            let totalItens = 0;
+
+            carrinho.forEach((item, index) => {
+                const subtotal = item.preco * item.qtd;
+                totalGeral += subtotal;
+                totalItens += item.qtd;
+
+                html += `
+                    <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
+                        <div class="w-2/5"><span class="font-bold text-slate-700 block truncate">${item.nome}</span><span class="text-slate-400">R$ ${item.preco.toFixed(2).replace('.', ',')} un</span></div>
+                        <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-2 py-1 rounded-lg">
+                            <button onclick="alterarQtd(${index}, -1)" class="text-slate-500 hover:text-red-600 font-bold px-1">-</button>
+                            <span class="font-bold text-slate-800 w-5 text-center">${item.qtd}</span>
+                            <button onclick="alterarQtd(${index}, 1)" class="text-slate-500 hover:text-indigo-600 font-bold px-1">+</button>
+                        </div>
+                        <div class="text-right"><span class="font-extrabold text-slate-800 block">R$ ${subtotal.toFixed(2).replace('.', ',')}</span></div>
+                    </div>
+                `;
+            });
+
+            lista.innerHTML = html;
+            contador.textContent = `${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
+            totalEl.textContent = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
+            valorTotalGlobal = totalGeral;
+        }
+
+        function limparCarrinho() { carrinho = []; atualizarCarrinhoUI(); }
+
+        function destacarBotaoPagamento(forma) {
+            ['PIX', 'Dinheiro', 'Cartão', 'Fiado', 'Misto'].forEach(f => {
+                const btn = document.getElementById(`btn-${f}`);
+                if(btn) btn.className = btn.className.replace(/shadow-xl ring-4 ring-.+?\/80 border-2 border-white scale-\[1.02\]/g, 'shadow-sm border-2 border-transparent');
+            });
+            const btnAtivo = document.getElementById(`btn-${forma}`);
+            if(!btnAtivo) return;
+            let color = 'ring-indigo-300/80';
+            if (forma === 'Dinheiro') color = 'ring-emerald-300/80';
+            if (forma === 'Cartão') color = 'ring-sky-300/80';
+            if (forma === 'Fiado') color = 'ring-amber-300/80';
+            if (forma === 'Misto') color = 'ring-purple-300/80';
+            btnAtivo.className = btnAtivo.className.replace('shadow-sm border-2 border-transparent', `shadow-xl ring-4 ${color} border-2 border-white scale-[1.02]`);
+        }
+
+        function escolherPagamento(forma) { formaPagamentoSelecionada = forma; destacarBotaoPagamento(forma); }
+
+        function imprimirCupom(vendaId, itens, total, formaPagamento) {
+            const janela = window.open('', '_blank', 'width=400,height=600');
+            const htmlItens = itens.map(i => `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>${i.qtd}x ${i.nome}</span><span>R$ ${(i.preco * i.qtd).toFixed(2).replace('.', ',')}</span></div>`).join('');
+            janela.document.write(`<html><head><style>body { font-family: monospace; font-size: 11px; width: 58mm; margin: 0; padding: 5px; }</style></head><body><div style="text-align:center; font-weight:bold;">DISTRIBUIDORA</div><hr/><div>ID: #${vendaId}</div><div>Data: ${new Date().toLocaleString('pt-BR')}</div><hr/>${htmlItens}<hr/><b>TOTAL: R$ ${total.toFixed(2).replace('.', ',')}</b><div>Forma: ${formaPagamento}</div></body></html>`);
+            janela.document.close();
+            setTimeout(() => { janela.print(); janela.close(); }, 400);
+        }
+
+        async function registrarVendaNoSupabase(vendaId, forma, total, itens) {
+            await sb.from('vendas').insert([{ venda_id: '#' + vendaId, cliente: 'Cliente Balcão', forma_pagamento: forma, total }]);
+            const itensFmt = itens.map(i => ({ venda_id: '#' + vendaId, nome_produto: i.nome, qtd: i.qtd, preco: i.preco, subtotal: i.preco * i.qtd }));
+            await sb.from('itens_venda').insert(itensFmt);
+            await sb.from('financeiro').insert([{ tipo: 'entrada', descricao: `Venda Caixa #${vendaId} (${forma})`, categoria: 'Vendas Balcão', valor: total }]);
+            
+            for (let item of itens) {
+                const prodOriginal = produtosPDV.find(p => p.id === item.id);
+                if (prodOriginal) {
+                    const estoqueAtual = prodOriginal.estoque ?? prodOriginal.qtd ?? 0;
+                    const novoEstoque = Math.max(0, estoqueAtual - item.qtd);
+                    await sb.from('produtos').update({ estoque: novoEstoque }).eq('id', item.id);
+                }
+            }
+        }
+
+        function abrirModalDinheiro() {
+            document.getElementById('modal-valor-total').textContent = `R$ ${valorTotalGlobal.toFixed(2).replace('.', ',')}`;
+            document.getElementById('input-recebido').value = '';
+            document.getElementById('display-troco').textContent = 'R$ 0,00';
+            document.getElementById('modal-dinheiro').classList.remove('hidden');
+        }
+        function fecharModalDinheiro() { document.getElementById('modal-dinheiro').classList.add('hidden'); }
+
+        function calcularTroco() {
+            const recebido = parseFloat(document.getElementById('input-recebido').value) || 0;
+            const troco = recebido - valorTotalGlobal;
+            const display = document.getElementById('display-troco');
+            if (troco >= 0) { display.textContent = `R$ ${troco.toFixed(2).replace('.', ',')}`; display.className = 'text-2xl font-black text-emerald-600'; }
+            else { display.textContent = `Falta: R$ ${Math.abs(troco).toFixed(2).replace('.', ',')}`; display.className = 'text-2xl font-black text-red-500'; }
+        }
+
+        async function confirmarDinheiro() {
+            if (isProcessandoVenda) return;
+            const recebido = parseFloat(document.getElementById('input-recebido').value) || 0;
+            if (recebido < valorTotalGlobal) { alert('Valor recebido menor que o total!'); return; }
+            
+            isProcessandoVenda = true;
+            const btnConfirmar = document.getElementById('btn-confirmar-dinheiro');
+            if(btnConfirmar) btnConfirmar.disabled = true;
+
+            try {
+                const vendaId = Math.floor(Math.random() * 90000) + 10000;
+                await registrarVendaNoSupabase(vendaId, 'Dinheiro', valorTotalGlobal, carrinho);
+                imprimirCupom(vendaId, carrinho, valorTotalGlobal, 'Dinheiro');
+                fecharModalDinheiro();
+                limparCarrinho();
+                carregarPDV();
+                carregarEstoque();
+                carregarFinanceiro();
+            } finally {
+                isProcessandoVenda = false;
+                if(btnConfirmar) btnConfirmar.disabled = false;
+            }
+        }
+
+        async function finalizarVendaGeral() {
+            if (isProcessandoVenda) return;
+            if (carrinho.length === 0) { alert('Comanda vazia!'); return; }
+            if (formaPagamentoSelecionada === 'Dinheiro') { abrirModalDinheiro(); return; }
+
+            isProcessandoVenda = true;
+            const btnConcluir = document.getElementById('btn-concluir-venda');
+            if(btnConcluir) btnConcluir.disabled = true;
+
+            try {
+                const vendaId = Math.floor(Math.random() * 90000) + 10000;
+                await registrarVendaNoSupabase(vendaId, formaPagamentoSelecionada, valorTotalGlobal, carrinho);
+                imprimirCupom(vendaId, carrinho, valorTotalGlobal, formaPagamentoSelecionada);
+                limparCarrinho();
+                carregarPDV();
+                carregarEstoque();
+                carregarFinanceiro();
+            } finally {
+                isProcessandoVenda = false;
+                if(btnConcluir) btnConcluir.disabled = false;
+            }
+        }
+
+        // --- FINANCEIRO ---
+        function alternarTipoFiltroPeriodo() {
+            const tipo = document.getElementById('filtro-tipo-periodo').value;
+            const blocoMes = document.getElementById('bloco-filtro-mes');
+            const blocoCustom = document.getElementById('bloco-filtro-custom');
+
+            blocoMes.classList.add('hidden');
+            blocoCustom.classList.add('hidden');
+
+            if (tipo === 'mes') {
+                blocoMes.classList.remove('hidden');
+            } else if (tipo === 'custom') {
+                blocoCustom.classList.remove('hidden');
+            }
+            carregarFinanceiro();
+        }
+
+        async function carregarFinanceiro() {
+            const { data, error } = await sb.from('financeiro').select('*').order('id', { ascending: false });
+            if (error) { console.error(error); return; }
+
+            const tipoFiltro = document.getElementById('filtro-tipo-periodo')?.value || 'geral';
+            let dadosFiltrados = data || [];
+
+            if (tipoFiltro === 'mes') {
+                const mesAnoVal = document.getElementById('filtro-mes-ano').value;
+                if (mesAnoVal) {
+                    dadosFiltrados = dadosFiltrados.filter(item => {
+                        if (!item.created_at) return false;
+                        return item.created_at.startsWith(mesAnoVal);
+                    });
+                }
+            } else if (tipoFiltro === 'custom') {
+                const dataInicio = document.getElementById('filtro-data-inicio').value;
+                const dataFim = document.getElementById('filtro-data-fim').value;
+                if (dataInicio && dataFim) {
+                    dadosFiltrados = dadosFiltrados.filter(item => {
+                        if (!item.created_at) return false;
+                        const dataItem = item.created_at.split('T')[0];
+                        return dataItem >= dataInicio && dataItem <= dataFim;
+                    });
+                }
+            }
+
+            const tbody = document.getElementById('tabela-financeiro');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            let totalEntrada = 0, totalSaida = 0;
+
+            if (!dadosFiltrados || dadosFiltrados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum lançamento encontrado para o período.</td></tr>`;
+                document.getElementById('card-entrada').innerText = `R$ 0,00`;
+                document.getElementById('card-saida').innerText = `R$ 0,00`;
+                document.getElementById('card-lucro').innerText = `R$ 0,00`;
+                return;
+            }
+
+            dadosFiltrados.forEach(item => {
+                const isEntrada = item.tipo === 'entrada';
+                const val = Number(item.valor || 0);
+                if (isEntrada) totalEntrada += val; else totalSaida += val;
+                const badge = isEntrada ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600';
+                const corVal = isEntrada ? 'text-emerald-600' : 'text-red-600';
+                const prefixo = isEntrada ? '+ R$ ' : '- R$ ';
+                const dataFmt = item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '--/--/----';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 text-slate-500">${dataFmt}</td>
+                        <td class="p-4"><span class="${badge} font-bold px-2.5 py-1 rounded-full text-[10px]">${item.tipo.toUpperCase()}</span></td>
+                        <td class="p-4 font-bold text-slate-900">${item.descricao}</td>
+                        <td class="p-4 text-slate-500">${item.categoria}</td>
+                        <td class="p-4 text-right font-extrabold ${corVal}">${prefixo}${val.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="excluirLancamento(${item.id})" class="text-slate-400 hover:text-red-600 p-1" title="Excluir Lançamento"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('card-entrada').innerText = `R$ ${totalEntrada.toFixed(2).replace('.', ',')}`;
+            document.getElementById('card-saida').innerText = `R$ ${totalSaida.toFixed(2).replace('.', ',')}`;
+            document.getElementById('card-lucro').innerText = `R$ ${(totalEntrada - totalSaida).toFixed(2).replace('.', ',')}`;
+        }
+
+        async function excluirLancamento(id) {
+            if (!confirm('Deseja realmente excluir este lançamento financeiro?')) return;
+            const { error } = await sb.from('financeiro').delete().eq('id', id);
+            if (error) {
+                alert('Erro ao excluir lançamento.');
+                console.error(error);
+                return;
+            }
+            carregarFinanceiro();
+        }
+
+        function gerarRelatorioFinanceiroPDF() {
+            // Clona a tabela e remove a coluna de ações antes de imprimir
+            const tabelaOriginal = document.getElementById('tabela-financeiro');
+            const cloneTabela = tabelaOriginal.cloneNode(true);
+            const linhas = cloneTabela.querySelectorAll('tr');
+            linhas.forEach(tr => {
+                const ultimaCelula = tr.lastElementChild;
+                if (ultimaCelula) ultimaCelula.remove();
+            });
+
+            const entrada = document.getElementById('card-entrada').innerText;
+            const saida = document.getElementById('card-saida').innerText;
+            const lucro = document.getElementById('card-lucro').innerText;
+            const tipoFiltro = document.getElementById('filtro-tipo-periodo').value;
+            let infoPeriodo = "Geral (Todos os Meses)";
+            if(tipoFiltro === 'mes') infoPeriodo = "Mês: " + document.getElementById('filtro-mes-ano').value;
+            if(tipoFiltro === 'custom') infoPeriodo = "De " + document.getElementById('filtro-data-inicio').value + " até " + document.getElementById('filtro-data-fim').value;
+
+            const janela = window.open('', '_blank', 'width=800,height=700');
+            janela.document.write(`
+                <html>
+                <head>
+                    <title>Relatório Financeiro - Distribuidora</title>
+                    <style>
+                        body { font-family: sans-serif; font-size: 12px; color: #333; padding: 20px; }
+                        .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
+                        .logo-txt { font-size: 20px; font-weight: bold; color: #4f46e5; }
+                        .resumo { display: flex; gap: 15px; margin-bottom: 20px; }
+                        .card-resumo { border: 1px solid #ddd; padding: 10px 15px; border-radius: 8px; flex: 1; background: #f9fafb; }
+                        .card-resumo span { display: block; font-size: 10px; color: #666; text-transform: uppercase; font-weight: bold; }
+                        .card-resumo strong { font-size: 16px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f3f4f6; font-size: 11px; text-transform: uppercase; }
+                        .text-right { text-align: right; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div>
+                            <div class="logo-txt"><img src="logo.png" style="height:30px; vertical-align:middle; margin-right:8px;" onerror="this.style.display='none'"> Distribuidora de Bebidas</div>
+                            <p style="margin: 5px 0 0 0; color: #666; font-size: 11px;">Relatório de Fechamento Financeiro (${infoPeriodo})</p>
+                        </div>
+                        <div style="text-align: right; font-size: 10px; color: #666;">
+                            Emitido em: ${new Date().toLocaleString('pt-BR')}
+                        </div>
+                    </div>
+                    <div class="resumo">
+                        <div class="card-resumo"><span>Faturamento</span><strong style="color: #059669;">${entrada}</strong></div>
+                        <div class="card-resumo"><span>Despesas</span><strong style="color: #dc2626;">${saida}</strong></div>
+                        <div class="card-resumo"><span>Lucro Líquido</span><strong style="color: #4f46e5;">${lucro}</strong></div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th class="text-right">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${cloneTabela.innerHTML}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `);
+            janela.document.close();
+            setTimeout(() => { janela.print(); janela.close(); }, 500);
+        }
+
+        function abrirModalFinanceiro() { document.getElementById('modal-financeiro').classList.remove('hidden'); }
+        function fecharModalFinanceiro() { document.getElementById('modal-financeiro').classList.add('hidden'); }
+
+        async function salvarLancamento() {
+            const tipo = document.getElementById('lanc-tipo').value;
+            const descricao = document.getElementById('lanc-desc').value;
+            const categoria = document.getElementById('lanc-cat').value;
+            const valor = parseFloat(document.getElementById('lanc-valor').value) || 0;
+            if (!descricao || valor <= 0) { alert('Preencha todos os campos!'); return; }
+            await sb.from('financeiro').insert([{ tipo, descricao, categoria, valor }]);
+            fecharModalFinanceiro();
+            carregarFinanceiro();
+        }
+
+        // --- ESTOQUE ---
+        async function carregarEstoque() {
+            const { data, error } = await sb.from('produtos').select('*').order('id', { ascending: false });
+            if (error) { console.error(error); return; }
+            listaEstoqueGlobal = data || [];
+            renderizarTabelaEstoque(listaEstoqueGlobal);
+        }
+
+        function renderizarTabelaEstoque(dados) {
+            const tbody = document.getElementById('tabela-estoque');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            if (!dados || dados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhum produto encontrado.</td></tr>`;
+                return;
+            }
+
+            dados.forEach(prod => {
+                const qtd = prod.estoque ?? prod.qtd ?? 0;
+                const statusClass = qtd <= 5 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600';
+                const statusText = qtd <= 5 ? 'Estoque Baixo' : 'Normal';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 font-bold text-slate-900">${prod.nome}</td>
+                        <td class="p-4 text-slate-500">${prod.categoria}</td>
+                        <td class="p-4 font-extrabold ${qtd <= 5 ? 'text-red-600' : 'text-slate-900'}">${qtd} un</td>
+                        <td class="p-4 text-slate-500">R$ ${Number(prod.preco_custo || 0).toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 font-extrabold text-indigo-600">R$ ${Number(prod.preco_venda || 0).toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 text-center"><span class="${statusClass} font-bold px-2.5 py-1 rounded-full text-[10px]">${statusText}</span></td>
+                        <td class="p-4 text-right flex items-center justify-end gap-1">
+                            <button onclick="abrirModalEditarProduto(${prod.id})" class="text-slate-400 hover:text-indigo-600 p-1" title="Editar / Reabastecer"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="excluirProduto(${prod.id})" class="text-slate-400 hover:text-red-600 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filtrarEstoque() {
+            const termo = document.getElementById('busca-estoque').value.toLowerCase();
+            const filtrados = listaEstoqueGlobal.filter(p => p.nome.toLowerCase().includes(termo) || p.categoria.toLowerCase().includes(termo));
+            renderizarTabelaEstoque(filtrados);
+        }
+
+        function abrirModalNovoProduto() {
+            document.getElementById('modal-produto-titulo').innerHTML = `<i class="fa-solid fa-box text-indigo-600"></i> Cadastrar Produto`;
+            document.getElementById('input-produto-id').value = '';
+            document.getElementById('input-nome').value = '';
+            document.getElementById('input-qtd').value = '';
+            document.getElementById('input-custo').value = '';
+            document.getElementById('input-venda').value = '';
+            document.getElementById('modal-produto').classList.remove('hidden');
+        }
+
+        function abrirModalEditarProduto(id) {
+            const prod = listaEstoqueGlobal.find(p => p.id === id);
+            if (!prod) return;
+            document.getElementById('modal-produto-titulo').innerHTML = `<i class="fa-solid fa-pen-to-square text-indigo-600"></i> Editar / Reabastecer Produto`;
+            document.getElementById('input-produto-id').value = prod.id;
+            document.getElementById('input-nome').value = prod.nome;
+            document.getElementById('input-categoria').value = prod.categoria;
+            document.getElementById('input-qtd').value = prod.estoque ?? prod.qtd ?? 0;
+            document.getElementById('input-custo').value = prod.preco_custo || 0;
+            document.getElementById('input-venda').value = prod.preco_venda || 0;
+            document.getElementById('modal-produto').classList.remove('hidden');
+        }
+
+        function fecharModalProduto() { document.getElementById('modal-produto').classList.add('hidden'); }
+
+        async function salvarProduto() {
+            const id = document.getElementById('input-produto-id').value;
+            const nome = document.getElementById('input-nome').value;
+            const categoria = document.getElementById('input-categoria').value;
+            const estoque = parseInt(document.getElementById('input-qtd').value) || 0;
+            const preco_custo = parseFloat(document.getElementById('input-custo').value) || 0;
+            const preco_venda = parseFloat(document.getElementById('input-venda').value) || 0;
+
+            if (!nome) { alert('Digite o nome!'); return; }
+
+            if (id) {
+                const { error } = await sb.from('produtos').update({ nome, categoria, estoque, preco_custo, preco_venda }).eq('id', id);
+                if (error) { alert('Erro ao atualizar produto.'); console.error(error); return; }
+            } else {
+                const { error } = await sb.from('produtos').insert([{ nome, categoria, estoque, preco_custo, preco_venda }]);
+                if (error) { alert('Erro ao cadastrar produto.'); console.error(error); return; }
+            }
+
+            fecharModalProduto();
+            carregarEstoque();
+            carregarPDV();
+        }
+
+        async function excluirProduto(id) {
+            if (!confirm('Deseja excluir este produto?')) return;
+            await sb.from('produtos').delete().eq('id', id);
+            carregarEstoque();
+            carregarPDV();
+        }
+    </script>
+</body>
+</html>
