@@ -1433,7 +1433,8 @@
                         <td class="p-4 text-center">${botaoNF}</td>
                         <td class="p-4 text-center"><span class="bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-full text-[10px]">Ativo</span></td>
                         <td class="p-4 text-right">
-                            <button onclick="excluirProduto(${prod.id})" class="text-slate-400 hover:text-red-600 p-1"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="abrirModalEditarProduto(${prod.id})" class="text-slate-400 hover:text-indigo-600 p-1 mr-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="excluirProduto(${prod.id})" class="text-slate-400 hover:text-red-600 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -1453,7 +1454,38 @@
             reader.readAsDataURL(arquivo);
         }
 
-        function abrirModalNovoProduto() { document.getElementById('modal-produto').classList.remove('hidden'); }
+        function abrirModalNovoProduto() {
+            document.getElementById('modal-produto-titulo').innerHTML = `<i class="fa-solid fa-box text-indigo-600"></i> Cadastrar Produto`;
+            document.getElementById('input-produto-id').value = '';
+            document.getElementById('input-nome').value = '';
+            document.getElementById('input-categoria').value = 'Cervejas';
+            document.getElementById('input-qtd').value = '';
+            document.getElementById('input-validade').value = '';
+            document.getElementById('input-custo').value = '';
+            document.getElementById('input-venda').value = '';
+            document.getElementById('input-nf-base64').value = '';
+            document.getElementById('input-nf-arquivo').value = '';
+            document.getElementById('modal-produto').classList.remove('hidden');
+        }
+
+        function abrirModalEditarProduto(id) {
+            const prod = listaEstoqueGlobal.find(p => p.id === id);
+            if (!prod) return;
+
+            document.getElementById('modal-produto-titulo').innerHTML = `<i class="fa-solid fa-pen-to-square text-indigo-600"></i> Editar Produto`;
+            document.getElementById('input-produto-id').value = prod.id;
+            document.getElementById('input-nome').value = prod.nome || '';
+            document.getElementById('input-categoria').value = prod.categoria || 'Cervejas';
+            document.getElementById('input-qtd').value = prod.estoque ?? '';
+            document.getElementById('input-validade').value = prod.validade || '';
+            document.getElementById('input-custo').value = prod.preco_custo ?? '';
+            document.getElementById('input-venda').value = prod.preco_venda ?? '';
+            document.getElementById('input-nf-base64').value = prod.status && prod.status.startsWith('NF:') ? prod.status.replace('NF:', '') : '';
+            document.getElementById('input-nf-arquivo').value = '';
+            
+            document.getElementById('modal-produto').classList.remove('hidden');
+        }
+
         function fecharModalProduto() { document.getElementById('modal-produto').classList.add('hidden'); }
 
         function verNotaFiscal(nfEncoded) {
@@ -1465,6 +1497,7 @@
         function fecharModalNF() { document.getElementById('modal-ver-nf').classList.add('hidden'); }
 
         async function salvarProduto() {
+            const id = document.getElementById('input-produto-id').value;
             const nome = document.getElementById('input-nome').value;
             const categoria = document.getElementById('input-categoria').value;
             const estoque = parseInt(document.getElementById('input-qtd').value) || 0;
@@ -1472,8 +1505,37 @@
             const preco_custo = parseFloat(document.getElementById('input-custo').value) || 0;
             const preco_venda = parseFloat(document.getElementById('input-venda').value) || 0;
             const nfBase64 = document.getElementById('input-nf-base64').value;
+
             if (!nome) { alert('Digite o nome!'); return; }
-            await sb.from('produtos').insert([{ nome, categoria, estoque, validade, preco_custo, preco_venda, status: nfBase64 ? `NF:${nfBase64}` : 'Normal' }]);
+
+            const dadosPayload = {
+                nome,
+                categoria,
+                estoque,
+                validade,
+                preco_custo,
+                preco_venda,
+                status: nfBase64 ? `NF:${nfBase64}` : 'Normal'
+            };
+
+            if (id) {
+                // Atualizar produto existente
+                const { error } = await sb.from('produtos').update(dadosPayload).eq('id', id);
+                if (error) {
+                    alert('Erro ao atualizar produto no banco.');
+                    console.error(error);
+                    return;
+                }
+            } else {
+                // Inserir novo produto
+                const { error } = await sb.from('produtos').insert([dadosPayload]);
+                if (error) {
+                    alert('Erro ao cadastrar produto no banco.');
+                    console.error(error);
+                    return;
+                }
+            }
+
             fecharModalProduto();
             carregarEstoque();
             carregarPDV();
