@@ -18,18 +18,42 @@
             nome: "JT1 MERCADINHO E DEPÓSITO",
             cnpj: "67.768.535/0001-88",
             endereco: "Rua Luan Braga, 20 - Campinas de Pirajá",
-            logoUrl: "https://api.iconify.design/fluent-emoji-flat:bottle-with-popping-cork.svg"
+            logoUrl: "logo.png"
         };
     </script>
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col justify-between text-slate-800">
+
+    <!-- TELA DE LOGIN GERAL -->
+    <div id="tela-login-geral" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl p-8 shadow-2xl space-y-6 border border-slate-200 text-center">
+            <div class="w-16 h-16 bg-indigo-50 rounded-2xl mx-auto flex items-center justify-center border border-indigo-100 overflow-hidden shadow-sm">
+                <img src="logo.png" alt="Logo" class="w-full h-full object-contain" onerror="this.src='https://api.iconify.design/fluent-emoji-flat:bottle-with-popping-cork.svg'">
+            </div>
+            <div>
+                <h2 class="font-bold text-xl text-slate-900">JT1 Mercadinho</h2>
+                <p class="text-xs text-slate-500 mt-1">Acesse o sistema com suas credenciais</p>
+            </div>
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Usuário</label>
+                    <input type="text" id="login-usuario" placeholder="Digite seu usuário" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50 focus:outline-none focus:border-indigo-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Senha</label>
+                    <input type="password" id="login-senha" placeholder="********" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50 focus:outline-none focus:border-indigo-600">
+                </div>
+                <button onclick="realizarLoginGeral()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl text-xs transition shadow-md">Entrar no Sistema</button>
+            </div>
+        </div>
+    </div>
 
     <!-- HEADER / MENU DE ABAS -->
     <header class="bg-white shadow-sm border-b border-slate-200 px-6 py-3">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden shadow-sm">
-                    <img id="header-logo-img" src="" alt="Logo" class="w-full h-full object-contain">
+                    <img id="header-logo-img" src="logo.png" alt="Logo" class="w-full h-full object-contain" onerror="this.src='https://api.iconify.design/fluent-emoji-flat:bottle-with-popping-cork.svg'">
                 </div>
                 <div>
                     <h1 class="font-bold text-base text-slate-900 leading-tight">JT1 Mercadinho e Depósito</h1>
@@ -42,14 +66,20 @@
                 <button onclick="mudarAba('caixa')" id="btn-aba-caixa" class="px-3 py-2 rounded-lg text-xs font-bold transition bg-white text-indigo-600 shadow-sm flex items-center gap-1.5">
                     <i class="fa-solid fa-cash-register"></i> Caixa
                 </button>
-                <button onclick="mudarAba('financeiro')" id="btn-aba-financeiro" class="px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                <button onclick="mudarAba('fechamento')" id="btn-aba-fechamento" class="px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-invoice-dollar text-emerald-600"></i> Fechamento de Caixa
+                </button>
+                <button onclick="tentarAcessarFinanceiro()" id="btn-aba-financeiro" class="px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
                     <i class="fa-solid fa-wallet"></i> Financeiro
                 </button>
                 <button onclick="mudarAba('estoque')" id="btn-aba-estoque" class="px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
                     <i class="fa-solid fa-boxes-stacked"></i> Estoque
                 </button>
-                <button onclick="mudarAba('rank')" id="btn-aba-rank" class="px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
-                    <i class="fa-solid fa-trophy text-amber-500"></i> Rank de Vendas
+                <button onclick="tentarAcessarRank()" id="btn-aba-rank" class="px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                    <i class="fa-solid fa-trophy text-indigo-500"></i> Rank de Vendas
+                </button>
+                <button onclick="tentarAcessarDocumentos()" id="btn-aba-documentos" class="px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
+                    <i class="fa-solid fa-folder-open"></i> Documentos
                 </button>
             </nav>
 
@@ -76,9 +106,7 @@
 
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex-grow">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Produtos Cadastrados / Atalhos</h3>
-                    <div id="grid-produtos-pdv" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1">
-                        <!-- Carregado via JS -->
-                    </div>
+                    <div id="grid-produtos-pdv" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1"></div>
                 </div>
             </div>
 
@@ -116,7 +144,6 @@
                 </div>
             </div>
 
-            <!-- SEÇÃO DE HISTÓRICO DE VENDAS DO CAIXA -->
             <div class="col-span-1 lg:col-span-12 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mt-6">
                 <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <h2 class="font-bold text-sm text-slate-900 flex items-center gap-2"><i class="fa-solid fa-cash-register text-indigo-600"></i> Histórico de Vendas Realizadas</h2>
@@ -142,7 +169,99 @@
             </div>
         </section>
 
-        <!-- ABA 2: FINANCEIRO -->
+        <!-- ABA NOVA: FECHAMENTO DE CAIXA -->
+        <section id="aba-fechamento" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-100 pb-4 gap-4">
+                    <div>
+                        <h2 class="font-bold text-lg text-slate-900 flex items-center gap-2"><i class="fa-solid fa-calculator text-emerald-600"></i> Fechamento de Caixa Diário</h2>
+                        <p class="text-xs text-slate-500">Confira os valores obtidos no dia por forma de pagamento e registre o fechamento.</p>
+                    </div>
+                    <button onclick="carregarDadosFechamentoCaixa()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-2">
+                        <i class="fa-solid fa-rotate"></i> Atualizar Totais do Dia
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Total Pix (Sistema)</span>
+                        <div id="fc-total-pix" class="text-xl font-extrabold text-indigo-600">R$ 0,00</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Total Cartão (Sistema)</span>
+                        <div id="fc-total-cartao" class="text-xl font-extrabold text-sky-600">R$ 0,00</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Total Dinheiro (Sistema)</span>
+                        <div id="fc-total-dinheiro" class="text-xl font-extrabold text-emerald-600">R$ 0,00</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <span class="text-xs font-bold text-slate-400 uppercase block mb-1">Total Fiado (Sistema)</span>
+                        <div id="fc-total-fiado" class="text-xl font-extrabold text-amber-600">R$ 0,00</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-emerald-50/40 p-5 rounded-2xl border border-emerald-100">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Operador / Responsável pelo Caixa</label>
+                            <input type="text" id="fc-operador" placeholder="Seu nome" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-white focus:outline-none focus:border-emerald-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Dinheiro Real Contado na Gaveta (R$)</label>
+                            <input type="number" id="fc-dinheiro-gaveta" step="0.01" placeholder="0.00" oninput="calcularDiferencaCaixa()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-extrabold text-slate-900 bg-white focus:outline-none focus:border-emerald-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Observações / Troco Inicial</label>
+                            <input type="text" id="fc-obs" placeholder="Ex: Caixa iniciado com R$ 100,00 de troco" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-white focus:outline-none focus:border-emerald-600">
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col justify-between bg-white p-5 rounded-xl border border-emerald-200 shadow-sm space-y-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Resumo do Fechamento</span>
+                            <div class="flex justify-between items-center mt-3 text-xs">
+                                <span class="text-slate-600">Dinheiro Esperado:</span>
+                                <span id="fc-resumo-esperado" class="font-bold text-slate-800">R$ 0,00</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-2 text-xs">
+                                <span class="text-slate-600">Dinheiro Informado:</span>
+                                <span id="fc-resumo-informado" class="font-bold text-slate-800">R$ 0,00</span>
+                            </div>
+                            <div class="border-t border-slate-100 my-3"></div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="font-bold text-slate-700">Diferença (Quebra):</span>
+                                <span id="fc-resumo-diferenca" class="font-black text-emerald-600">R$ 0,00</span>
+                            </div>
+                        </div>
+                        <button onclick="salvarFechamentoCaixa()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-lock"></i> Salvar e Concluir Fechamento
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <h3 class="font-bold text-sm text-slate-900 mb-3 flex items-center gap-2"><i class="fa-solid fa-history text-indigo-600"></i> Histórico de Fechamentos Anteriores</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                    <th class="p-3">Data / Hora</th>
+                                    <th class="p-3">Operador</th>
+                                    <th class="p-3 text-right">Dinheiro Gaveta</th>
+                                    <th class="p-3 text-right">Pix / Cartão</th>
+                                    <th class="p-3 text-right">Total Geral</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-historico-fechamentos" class="divide-y divide-slate-100 text-xs font-medium text-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 2: FINANCEIRO (Protegida por 8484) -->
         <section id="aba-financeiro" class="hidden space-y-6">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
@@ -255,7 +374,7 @@
             </div>
         </section>
 
-        <!-- ABA 4: RANK DE VENDAS -->
+        <!-- ABA 4: RANK DE VENDAS (Protegida por 8484) -->
         <section id="aba-rank" class="hidden space-y-6">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
@@ -302,7 +421,7 @@
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-100 flex justify-between items-center">
-                    <h2 class="font-bold text-sm text-slate-900 flex items-center gap-2"><i class="fa-solid fa-medal text-amber-500"></i> Desempenho de Produtos Mais Vendidos</h2>
+                    <h2 class="font-bold text-sm text-slate-900 flex items-center gap-2"><i class="fa-solid fa-medal text-indigo-600"></i> Desempenho de Produtos Mais Vendidos</h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[700px]">
@@ -316,6 +435,49 @@
                             </tr>
                         </thead>
                         <tbody id="tabela-rank" class="divide-y divide-slate-100 text-xs font-medium text-slate-700"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 5: DOCUMENTOS CORPORATIVOS (UPLOAD RESTRITO) -->
+        <section id="aba-documentos" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 class="font-bold text-base text-slate-900 flex items-center gap-2"><i class="fa-solid fa-folder-open text-indigo-600"></i> Gerenciamento de Documentos Corporativos</h2>
+                        <p class="text-xs text-slate-500">Área restrita para armazenamento seguro de arquivos empresariais e prevenção de perdas.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Título do Documento</label>
+                        <input type="text" id="doc-titulo" placeholder="Ex: Contrato Social 2026" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-white focus:outline-none focus:border-indigo-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Arquivo Corporativo (PDF / Imagem)</label>
+                        <input type="file" id="doc-arquivo-input" accept=".pdf,image/*" onchange="converterDocumentoCorp(this)" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100">
+                        <input type="hidden" id="doc-arquivo-base64">
+                    </div>
+                    <div class="md:col-span-2">
+                        <button onclick="salvarDocumentoCorp()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2 w-full md:w-auto">
+                            <i class="fa-solid fa-upload"></i> Enviar e Salvar Documento
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto pt-2">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="p-4">Título do Documento</th>
+                                <th class="p-4">Data de Envio</th>
+                                <th class="p-4 text-center">Visualizar Arquivo</th>
+                                <th class="p-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-documentos" class="divide-y divide-slate-100 text-xs font-medium text-slate-700"></tbody>
                     </table>
                 </div>
             </div>
@@ -419,7 +581,7 @@
                         <input type="date" id="input-validade" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Nota Fiscal (Arquivo PDF/Imagem ou Link)</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nota Fiscal (Arquivo PDF/Imagem)</label>
                         <input type="file" id="input-nf-arquivo" accept=".pdf,image/*" onchange="converterArquivoNF(this)" class="w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100">
                         <input type="hidden" id="input-nf-base64">
                     </div>
@@ -442,13 +604,11 @@
         </div>
     </div>
 
-    <!-- MODAL VISUALIZAR NOTA FISCAL -->
+    <!-- MODAL VISUALIZAR NOTA FISCAL OU DOCUMENTO -->
     <div id="modal-ver-nf" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white w-full max-w-lg rounded-2xl p-6 shadow-xl space-y-4 border border-slate-200 text-center">
-            <h3 class="font-bold text-slate-900 text-lg flex items-center justify-center gap-2"><i class="fa-solid fa-file-invoice text-indigo-600"></i> Visualizar Nota Fiscal</h3>
-            <div id="container-conteudo-nf" class="my-4 max-h-[60vh] overflow-auto flex justify-center items-center">
-                <!-- Conteúdo dinâmico da NF -->
-            </div>
+            <h3 class="font-bold text-slate-900 text-lg flex items-center justify-center gap-2"><i class="fa-solid fa-file-invoice text-indigo-600"></i> Visualizar Documento / Nota</h3>
+            <div id="container-conteudo-nf" class="my-4 max-h-[60vh] overflow-auto flex justify-center items-center"></div>
             <button onclick="fecharModalNF()" class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs">Fechar</button>
         </div>
     </div>
@@ -465,6 +625,7 @@
         let formaPagamentoSelecionada = 'Dinheiro';
         let valorTotalGlobal = 0;
         let isProcessandoVenda = false;
+        let totaisFechamentoDia = { pix: 0, cartao: 0, dinheiro: 0, fiado: 0 };
 
         function atualizarRelogio() {
             const agora = new Date();
@@ -477,9 +638,6 @@
         atualizarRelogio();
 
         document.addEventListener("DOMContentLoaded", () => {
-            const logoImg = document.getElementById('header-logo-img');
-            if (logoImg) logoImg.src = DADOS_EMPRESA.logoUrl;
-
             const dataHoje = new Date();
             const ano = dataHoje.getFullYear();
             const mes = String(dataHoje.getMonth() + 1).padStart(2, '0');
@@ -494,28 +652,74 @@
             if(rankInputMes) rankInputMes.value = `${ano}-${mes}`;
 
             carregarPDV();
-            carregarFinanceiro();
             carregarEstoque();
             carregarVendasCaixa();
-            carregarRankVendas();
+            carregarDocumentosCorp();
+            carregarDadosFechamentoCaixa();
         });
+
+        // --- AUTENTICAÇÃO E CONTROLE DE ACESSO ---
+        function realizarLoginGeral() {
+            const usuario = document.getElementById('login-usuario').value;
+            const senha = document.getElementById('login-senha').value;
+            if(!usuario || !senha) {
+                alert('Preencha o usuário e a senha!');
+                return;
+            }
+            document.getElementById('tela-login-geral').classList.add('hidden');
+        }
+
+        function tentarAcessarFinanceiro() {
+            const senha = prompt("Digite o código de acesso numérico para o Financeiro:");
+            if (senha === "8484") {
+                mudarAba('financeiro');
+            } else if (senha !== null) {
+                alert("Código incorreto!");
+            }
+        }
+
+        function tentarAcessarRank() {
+            const senha = prompt("Digite o código de acesso numérico para o Rank:");
+            if (senha === "8484") {
+                mudarAba('rank');
+            } else if (senha !== null) {
+                alert("Código incorreto!");
+            }
+        }
+
+        function tentarAcessarDocumentos() {
+            const senha = prompt("Digite a senha dedicada de acesso à Documentação:");
+            if (senha === "8484" || senha === "admin123") {
+                mudarAba('documentos');
+            } else if (senha !== null) {
+                alert("Senha incorreta!");
+            }
+        }
 
         function mudarAba(aba) {
             document.getElementById('aba-caixa').classList.add('hidden');
+            document.getElementById('aba-fechamento').classList.add('hidden');
             document.getElementById('aba-financeiro').classList.add('hidden');
             document.getElementById('aba-estoque').classList.add('hidden');
             document.getElementById('aba-rank').classList.add('hidden');
+            document.getElementById('aba-documentos').classList.add('hidden');
 
             document.getElementById('btn-aba-caixa').className = "px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5";
+            document.getElementById('btn-aba-fechamento').className = "px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5";
             document.getElementById('btn-aba-financeiro').className = "px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5";
             document.getElementById('btn-aba-estoque').className = "px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5";
             document.getElementById('btn-aba-rank').className = "px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5";
+            document.getElementById('btn-aba-documentos').className = "px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5";
 
             if (aba === 'caixa') {
                 document.getElementById('aba-caixa').classList.remove('hidden');
                 document.getElementById('btn-aba-caixa').className = "px-3 py-2 rounded-lg text-xs font-bold transition bg-white text-indigo-600 shadow-sm flex items-center gap-1.5";
                 carregarPDV();
                 carregarVendasCaixa();
+            } else if (aba === 'fechamento') {
+                document.getElementById('aba-fechamento').classList.remove('hidden');
+                document.getElementById('btn-aba-fechamento').className = "px-3 py-2 rounded-lg text-xs font-bold transition bg-white text-emerald-600 shadow-sm flex items-center gap-1.5";
+                carregarDadosFechamentoCaixa();
             } else if (aba === 'financeiro') {
                 document.getElementById('aba-financeiro').classList.remove('hidden');
                 document.getElementById('btn-aba-financeiro').className = "px-3 py-2 rounded-lg text-xs font-bold transition bg-white text-indigo-600 shadow-sm flex items-center gap-1.5";
@@ -528,7 +732,199 @@
                 document.getElementById('aba-rank').classList.remove('hidden');
                 document.getElementById('btn-aba-rank').className = "px-3 py-2 rounded-lg text-xs font-bold transition bg-white text-indigo-600 shadow-sm flex items-center gap-1.5";
                 carregarRankVendas();
+            } else if (aba === 'documentos') {
+                document.getElementById('aba-documentos').classList.remove('hidden');
+                document.getElementById('btn-aba-documentos').className = "px-3 py-2 rounded-lg text-xs font-bold transition bg-white text-indigo-600 shadow-sm flex items-center gap-1.5";
+                carregarDocumentosCorp();
             }
+        }
+
+        // --- FECHAMENTO DE CAIXA ---
+        async function carregarDadosFechamentoCaixa() {
+            const dataHojeStr = new Date().toISOString().split('T')[0];
+            const { data: vendas, error } = await sb.from('vendas').select('*');
+            if (error || !vendas) {
+                console.error("Erro ao carregar vendas para o fechamento:", error);
+                return;
+            }
+
+            let p = 0, c = 0, d = 0, f = 0;
+            vendas.forEach(v => {
+                const dataRef = (v.data_hora || v.created_at || '').split('T')[0];
+                if (dataRef === dataHojeStr) {
+                    const val = Number(v.total || 0);
+                    const forma = (v.forma_pagamento || '').toUpperCase();
+                    if (forma.includes('PIX')) p += val;
+                    else if (forma.includes('CARTÃO') || forma.includes('CARTAO')) c += val;
+                    else if (forma.includes('DINHEIRO')) d += val;
+                    else if (forma.includes('FIADO')) f += val;
+                    else d += val; // padrão Dinheiro
+                }
+            });
+
+            totaisFechamentoDia = { pix: p, cartao: c, dinheiro: d, fiado: f };
+
+            document.getElementById('fc-total-pix').textContent = `R$ ${p.toFixed(2).replace('.', ',')}`;
+            document.getElementById('fc-total-cartao').textContent = `R$ ${c.toFixed(2).replace('.', ',')}`;
+            document.getElementById('fc-total-dinheiro').textContent = `R$ ${d.toFixed(2).replace('.', ',')}`;
+            document.getElementById('fc-total-fiado').textContent = `R$ ${f.toFixed(2).replace('.', ',')}`;
+
+            document.getElementById('fc-resumo-esperado').textContent = `R$ ${d.toFixed(2).replace('.', ',')}`;
+            calcularDiferencaCaixa();
+            carregarHistoricoFechamentos();
+        }
+
+        function calcularDiferencaCaixa() {
+            const esperado = totaisFechamentoDia.dinheiro;
+            const informado = parseFloat(document.getElementById('fc-dinheiro-gaveta').value) || 0;
+            const diferenca = informado - esperado;
+
+            document.getElementById('fc-resumo-informado').textContent = `R$ ${informado.toFixed(2).replace('.', ',')}`;
+            const difEl = document.getElementById('fc-resumo-diferenca');
+            difEl.textContent = `R$ ${diferenca.toFixed(2).replace('.', ',')}`;
+            
+            if (diferenca < 0) {
+                difEl.className = 'font-black text-red-600';
+            } else if (diferenca > 0) {
+                difEl.className = 'font-black text-indigo-600';
+            } else {
+                difEl.className = 'font-black text-emerald-600';
+            }
+        }
+
+        async function salvarFechamentoCaixa() {
+            const operador = document.getElementById('fc-operador').value.trim();
+            const dinheiroGaveta = parseFloat(document.getElementById('fc-dinheiro-gaveta').value) || 0;
+            const observacoes = document.getElementById('fc-obs').value.trim();
+
+            if (!operador) {
+                alert('Informe o nome do operador responsable pelo caixa!');
+                return;
+            }
+
+            const totalGeralDia = totaisFechamentoDia.pix + totaisFechamentoDia.cartao + totaisFechamentoDia.dinheiro;
+
+            const payload = {
+                operador,
+                dinheiro_gaveta: dinheiroGaveta,
+                pix_sistema: totaisFechamentoDia.pix,
+                cartao_sistema: totaisFechamentoDia.cartao,
+                fiado_sistema: totaisFechamentoDia.fiado,
+                total_geral: totalGeralDia,
+                observacoes: observacoes || 'Nenhuma observação'
+            };
+
+            const { error } = await sb.from('fechamento_caixa').insert([payload]);
+            if (error) {
+                alert('Erro ao salvar fechamento no banco de dados. Verifique a tabela no Supabase.');
+                console.error(error);
+                return;
+            }
+
+            alert('Fechamento de caixa salvo com sucesso!');
+            document.getElementById('fc-operador').value = '';
+            document.getElementById('fc-dinheiro-gaveta').value = '';
+            document.getElementById('fc-obs').value = '';
+            carregarHistoricoFechamentos();
+        }
+
+        async function carregarHistoricoFechamentos() {
+            const tbody = document.getElementById('tabela-historico-fechamentos');
+            if (!tbody) return;
+
+            const { data, error } = await sb.from('fechamento_caixa').select('*').order('id', { ascending: false });
+            if (error || !data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum fechamento registrado ainda.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                const dataFmt = item.data_fechamento ? new Date(item.data_fechamento).toLocaleString('pt-BR') : 'Recente';
+                const dinGaveta = Number(item.dinheiro_gaveta || 0);
+                const pixCartao = Number(item.pix_sistema || 0) + Number(item.cartao_sistema || 0);
+                const totalGeral = Number(item.total_geral || 0);
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 text-slate-500">${dataFmt}</td>
+                        <td class="p-3 font-bold text-slate-900">${item.operador}</td>
+                        <td class="p-3 text-right font-semibold text-emerald-600">R$ ${dinGaveta.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-3 text-right font-semibold text-indigo-600">R$ ${pixCartao.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-3 text-right font-extrabold text-slate-900">R$ ${totalGeral.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="excluirFechamento(${item.id})" class="text-slate-400 hover:text-red-600 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function excluirFechamento(id) {
+            if (!confirm('Deseja excluir este registro de fechamento?')) return;
+            await sb.from('fechamento_caixa').delete().eq('id', id);
+            carregarHistoricoFechamentos();
+        }
+
+        // --- DOCUMENTOS CORPORATIVOS ---
+        function converterDocumentoCorp(input) {
+            const arquivo = input.files[0];
+            if (!arquivo) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('doc-arquivo-base64').value = e.target.result;
+            };
+            reader.readAsDataURL(arquivo);
+        }
+
+        async function salvarDocumentoCorp() {
+            const titulo = document.getElementById('doc-titulo').value;
+            const base64 = document.getElementById('doc-arquivo-base64').value;
+            if (!titulo || !base64) {
+                alert('Preencha o título e selecione um arquivo!');
+                return;
+            }
+            const { error } = await sb.from('documentos_corporativos').insert([{ titulo, arquivo: base64 }]);
+            if (error) {
+                console.warn("Tabela documentos_corporativos pode não existir no Supabase.", error);
+            }
+            document.getElementById('doc-titulo').value = '';
+            document.getElementById('doc-arquivo-input').value = '';
+            document.getElementById('doc-arquivo-base64').value = '';
+            carregarDocumentosCorp();
+            alert('Documento corporativo salvo com sucesso!');
+        }
+
+        async function carregarDocumentosCorp() {
+            const tbody = document.getElementById('tabela-documentos');
+            if(!tbody) return;
+            const { data, error } = await sb.from('documentos_corporativos').select('*').order('id', { ascending: false });
+            if (error || !data) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Nenhum documento corporativo cadastrado ainda.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = '';
+            data.forEach(doc => {
+                const dataFmt = doc.created_at ? new Date(doc.created_at).toLocaleDateString('pt-BR') : 'Data recente';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 font-bold text-slate-900">${doc.titulo}</td>
+                        <td class="p-4 text-slate-500">${dataFmt}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="verNotaFiscal('${encodeURIComponent(doc.arquivo)}')" class="bg-sky-50 hover:bg-sky-100 text-sky-600 font-bold px-3 py-1.5 rounded-lg text-xs transition"><i class="fa-solid fa-eye"></i> Visualizar</button>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button onclick="excluirDocumentoCorp(${doc.id})" class="text-slate-400 hover:text-red-600 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function excluirDocumentoCorp(id) {
+            if(!confirm('Deseja excluir este documento?')) return;
+            await sb.from('documentos_corporativos').delete().eq('id', id);
+            carregarDocumentosCorp();
         }
 
         // --- FRENTE DE CAIXA ---
@@ -682,7 +1078,7 @@
                 </head>
                 <body>
                     <div class="center" style="margin-bottom: 5px;">
-                        <img src="${DADOS_EMPRESA.logoUrl}" alt="Logo" style="width: 36px; height: 36px; object-fit: contain; display: inline-block;" />
+                        <img src="${DADOS_EMPRESA.logoUrl}" alt="Logo" style="width: 36px; height: 36px; object-fit: contain; display: inline-block;" onerror="this.style.display='none'" />
                     </div>
                     <div class="center bold" style="font-size: 13px;">${DADOS_EMPRESA.nome}</div>
                     <div class="center" style="font-size: 10px;">CNPJ: ${DADOS_EMPRESA.cnpj}</div>
@@ -723,21 +1119,13 @@
         }
 
         async function registrarVendaNoSupabase(vendaId, forma, total, itens) {
-            const vendaIdStr = String(vendaId); // Mantém limpo e idêntico para as duas tabelas
-            
+            const vendaIdStr = String(vendaId);
             await sb.from('vendas').insert([{ venda_id: vendaIdStr, cliente: 'Cliente Balcão', forma_pagamento: forma, total }]);
             
             const itensFmt = itens.map(i => {
                 const subtotal = i.preco * i.qtd;
                 const lucro_total = (i.preco - (i.custo || 0)) * i.qtd;
-                return { 
-                    venda_id: vendaIdStr, 
-                    nome_produto: i.nome, 
-                    qtd: i.qtd, 
-                    preco: i.preco, 
-                    subtotal: subtotal,
-                    lucro_total: lucro_total
-                };
+                return { venda_id: vendaIdStr, nome_produto: i.nome, qtd: i.qtd, preco: i.preco, subtotal, lucro_total };
             });
             
             await sb.from('itens_venda').insert(itensFmt);
@@ -775,9 +1163,6 @@
             if (recebido < valorTotalGlobal) { alert('Valor recebido menor que o total!'); return; }
             
             isProcessandoVenda = true;
-            const btnConfirmar = document.getElementById('btn-confirmar-dinheiro');
-            if(btnConfirmar) btnConfirmar.disabled = true;
-
             try {
                 const vendaId = Math.floor(Math.random() * 90000) + 10000;
                 await registrarVendaNoSupabase(vendaId, 'Dinheiro', valorTotalGlobal, carrinho);
@@ -786,12 +1171,10 @@
                 limparCarrinho();
                 carregarPDV();
                 carregarEstoque();
-                carregarFinanceiro();
                 carregarVendasCaixa();
-                carregarRankVendas();
+                carregarDadosFechamentoCaixa();
             } finally {
                 isProcessandoVenda = false;
-                if(btnConfirmar) btnConfirmar.disabled = false;
             }
         }
 
@@ -801,9 +1184,6 @@
             if (formaPagamentoSelecionada === 'Dinheiro') { abrirModalDinheiro(); return; }
 
             isProcessandoVenda = true;
-            const btnConcluir = document.getElementById('btn-concluir-venda');
-            if(btnConcluir) btnConcluir.disabled = true;
-
             try {
                 const vendaId = Math.floor(Math.random() * 90000) + 10000;
                 await registrarVendaNoSupabase(vendaId, formaPagamentoSelecionada, valorTotalGlobal, carrinho);
@@ -811,16 +1191,14 @@
                 limparCarrinho();
                 carregarPDV();
                 carregarEstoque();
-                carregarFinanceiro();
                 carregarVendasCaixa();
-                carregarRankVendas();
+                carregarDadosFechamentoCaixa();
             } finally {
                 isProcessandoVenda = false;
-                if(btnConcluir) btnConcluir.disabled = false;
             }
         }
 
-        // --- HISTÓRICO DE VENDAS DO CAIXA ---
+        // --- HISTÓRICO DE VENDAS ---
         let listaVendasCaixaGlobal = [];
         let itensVendasGlobal = [];
 
@@ -829,7 +1207,6 @@
                 sb.from('vendas').select('*').order('id', { ascending: false }),
                 sb.from('itens_venda').select('*')
             ]);
-
             listaVendasCaixaGlobal = resVendas.data || [];
             itensVendasGlobal = resItens.data || [];
 
@@ -848,27 +1225,20 @@
             if (mesFiltroVal) {
                 vendasFiltradas = listaVendasCaixaGlobal.filter(v => {
                     const dataRef = v.data_hora || v.created_at;
-                    if (!dataRef) return false;
-                    return dataRef.startsWith(mesFiltroVal);
+                    return dataRef && dataRef.startsWith(mesFiltroVal);
                 });
-            }
-
-            if (vendasFiltradas.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhuma venda encontrada para o mês selecionado.</td></tr>`;
-                return;
             }
 
             vendasFiltradas.forEach(venda => {
                 const dataRef = venda.data_hora || venda.created_at;
                 const dataFmt = dataRef ? new Date(dataRef).toLocaleString('pt-BR') : '--/--/---- --:--';
                 const valorTotal = Number(venda.total || 0);
-                const formaPagto = venda.forma_pagamento || 'Dinheiro';
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="p-4 font-bold text-slate-900">#${venda.venda_id}</td>
                         <td class="p-4 text-slate-500">${dataFmt}</td>
-                        <td class="p-4 font-semibold text-slate-700">${formaPagto}</td>
+                        <td class="p-4 font-semibold text-slate-700">${venda.forma_pagamento || 'Dinheiro'}</td>
                         <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${valorTotal.toFixed(2).replace('.', ',')}</td>
                         <td class="p-4 text-center">
                             <button onclick="baixarSegundaVia('${venda.venda_id}')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center justify-center gap-1.5 mx-auto">
@@ -886,46 +1256,26 @@
             const dataRef = venda.data_hora || venda.created_at;
             const dataFmt = dataRef ? new Date(dataRef).toLocaleString('pt-BR') : '--/--/---- --:--';
             const valorTotal = Number(venda.total || 0).toFixed(2).replace('.', ',');
-            const formaPagto = venda.forma_pagamento || 'Dinheiro';
-            
             const itensVendaAtual = itensVendasGlobal.filter(i => String(i.venda_id) === String(venda.venda_id));
-            let itensHtml = '';
-            
-            if (itensVendaAtual.length > 0) {
-                itensVendaAtual.forEach(i => {
-                    itensHtml += `<tr><td style="padding: 3px 0;">${i.nome_produto}</td><td style="text-align:center; padding: 3px 0;">${i.qtd}x</td><td style="text-align:right; padding: 3px 0;">R$ ${Number(i.subtotal || 0).toFixed(2).replace('.', ',')}</td></tr>`;
-                });
-            } else {
-                itensHtml = `<tr><td colspan="3" style="text-align:center;">Venda Balcão / Caixa Geral</td></tr>`;
-            }
+            let itensHtml = itensVendaAtual.map(i => `<tr><td style="padding: 3px 0;">${i.nome_produto}</td><td style="text-align:center; padding: 3px 0;">${i.qtd}x</td><td style="text-align:right; padding: 3px 0;">R$ ${Number(i.subtotal || 0).toFixed(2).replace('.', ',')}</td></tr>`).join('');
 
             const janela = window.open('', '_blank', 'width=420,height=700');
             janela.document.write(`
-                <html>
-                <head><title>2ª Via - ${DADOS_EMPRESA.nome}</title><style>body { font-family: 'Courier New', Courier, monospace; font-size: 11px; padding: 10px; width: 72mm; margin: 0 auto; }</style></head>
+                <html><head><title>2ª Via</title><style>body { font-family: 'Courier New', monospace; font-size: 11px; padding: 10px; width: 72mm; margin: 0 auto; }</style></head>
                 <body>
-                    <div style="text-align:center; margin-bottom: 5px;">
-                        <img src="${DADOS_EMPRESA.logoUrl}" alt="Logo" style="width: 36px; height: 36px; object-fit: contain; display: inline-block;" />
-                    </div>
                     <div style="text-align:center; font-weight:bold; font-size: 13px;">${DADOS_EMPRESA.nome}</div>
                     <div style="text-align:center; font-size: 10px;">CNPJ: ${DADOS_EMPRESA.cnpj}</div>
-                    <div style="text-align:center; font-size: 9px; margin-bottom: 4px;">${DADOS_EMPRESA.endereco}</div>
                     <div style="text-align:center; margin-top:5px; font-weight: bold;">** 2ª VIA DO CLIENTE **</div>
                     <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
                     <div><b>ID Venda:</b> #${venda.venda_id}</div>
                     <div><b>Data/Hora:</b> ${dataFmt}</div>
                     <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
                     <table style="width:100%;">
-                        <tr style="border-bottom: 1px solid #000;"><th style="text-align:left; font-size:10px;">ITEM</th><th style="text-align:center; font-size:10px;">QTD</th><th style="text-align:right; font-size:10px;">SUBTOTAL</th></tr>
                         ${itensHtml}
                     </table>
                     <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
-                    <div><b>Forma:</b> ${formaPagto}</div>
-                    <div style="text-align:right; font-weight:bold; font-size:13px; margin-top:5px;">TOTAL: R$ ${valorTotal}</div>
-                    <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
-                    <div style="text-align:center; font-size:10px; margin-top: 8px;">Obrigado pela preferência!</div>
-                </body>
-                </html>
+                    <div style="text-align:right; font-weight:bold; font-size:13px;">TOTAL: R$ ${valorTotal}</div>
+                </body></html>
             `);
             janela.document.close();
             setTimeout(() => { janela.print(); janela.close(); }, 500);
@@ -934,12 +1284,7 @@
         // --- RANK DE VENDAS ---
         function alternarFiltroRank() {
             const tipo = document.getElementById('rank-filtro-tipo').value;
-            const blocoMes = document.getElementById('rank-bloco-mes');
-            if (tipo === 'mes') {
-                blocoMes.classList.remove('hidden');
-            } else {
-                blocoMes.classList.add('hidden');
-            }
+            document.getElementById('rank-bloco-mes').classList.toggle('hidden', tipo !== 'mes');
             carregarRankVendas();
         }
 
@@ -948,86 +1293,50 @@
                 sb.from('vendas').select('*'),
                 sb.from('itens_venda').select('*')
             ]);
-
             const todasVendas = resVendas.data || [];
             let todosItens = resItens.data || [];
-
             const tipoFiltro = document.getElementById('rank-filtro-tipo')?.value || 'geral';
 
             if (tipoFiltro === 'mes') {
                 const mesAnoVal = document.getElementById('rank-mes-ano')?.value;
                 if (mesAnoVal) {
-                    const vendasFiltradasIds = new Set(
-                        todasVendas.filter(v => {
-                            const dataRef = v.data_hora || v.created_at;
-                            return dataRef && dataRef.startsWith(mesAnoVal);
-                        }).map(v => String(v.venda_id))
-                    );
+                    const vendasFiltradasIds = new Set(todasVendas.filter(v => (v.data_hora || v.created_at)?.startsWith(mesAnoVal)).map(v => String(v.venda_id)));
                     todosItens = todosItens.filter(item => vendasFiltradasIds.has(String(item.venda_id)));
                 }
             }
 
             const mapaProdutos = {};
-            let totalQtdGeral = 0;
-            let totalFaturamentoGeral = 0;
+            let totalQtdGeral = 0, totalFaturamentoGeral = 0;
 
             todosItens.forEach(item => {
-                const nomeProd = item.nome_produto || 'Produto Indefinido';
+                const nomeProd = item.nome_produto || 'Produto';
                 const qtd = Number(item.qtd || 0);
                 const subtotal = Number(item.subtotal || (item.preco * qtd) || 0);
                 const lucro = Number(item.lucro_total || 0);
-
                 totalQtdGeral += qtd;
                 totalFaturamentoGeral += subtotal;
 
-                if (!mapaProdutos[nomeProd]) {
-                    mapaProdutos[nomeProd] = { nome: nomeProd, qtdTotal: 0, faturamento: 0, lucroTotal: 0 };
-                }
+                if (!mapaProdutos[nomeProd]) mapaProdutos[nomeProd] = { nome: nomeProd, qtdTotal: 0, faturamento: 0, lucroTotal: 0 };
                 mapaProdutos[nomeProd].qtdTotal += qtd;
                 mapaProdutos[nomeProd].faturamento += subtotal;
                 mapaProdutos[nomeProd].lucroTotal += lucro;
             });
 
             const arrayRank = Object.values(mapaProdutos).sort((a, b) => b.qtdTotal - a.qtdTotal);
-
-            const elCampeao = document.getElementById('rank-card-campeao');
-            const elQtdTotal = document.getElementById('rank-card-qtd-total');
-            const elFaturamento = document.getElementById('rank-card-faturamento');
-
             if (arrayRank.length > 0) {
-                if(elCampeao) elCampeao.textContent = arrayRank[0].nome;
-                if(elQtdTotal) elQtdTotal.textContent = `${totalQtdGeral} un`;
-                if(elFaturamento) elFaturamento.textContent = `R$ ${totalFaturamentoGeral.toFixed(2).replace('.', ',')}`;
-            } else {
-                if(elCampeao) elCampeao.textContent = 'Nenhum';
-                if(elQtdTotal) elQtdTotal.textContent = '0 un';
-                if(elFaturamento) elFaturamento.textContent = 'R$ 0,00';
+                document.getElementById('rank-card-campeao').textContent = arrayRank[0].nome;
+                document.getElementById('rank-card-qtd-total').textContent = `${totalQtdGeral} un`;
+                document.getElementById('rank-card-faturamento').textContent = `R$ ${totalFaturamentoGeral.toFixed(2).replace('.', ',')}`;
             }
 
             const tbody = document.getElementById('tabela-rank');
             if (!tbody) return;
-            tbody.innerHTML = '';
-
-            if (arrayRank.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Nenhum dado de venda registrado para compor o rank ainda.</td></tr>`;
-                return;
-            }
+            tbody.innerHTML = arrayRank.length === 0 ? `<tr><td colspan="5" class="p-6 text-center text-slate-400">Nenhum dado de venda registrado.</td></tr>` : '';
 
             arrayRank.forEach((item, index) => {
-                const posicao = index + 1;
-                let iconePosicao = `<span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center mx-auto text-xs">${posicao}º</span>`;
-                
-                if (posicao === 1) {
-                    iconePosicao = `<span class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 font-black flex items-center justify-center mx-auto text-sm shadow-sm"><i class="fa-solid fa-trophy"></i></span>`;
-                } else if (posicao === 2) {
-                    iconePosicao = `<span class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center mx-auto text-xs"><i class="fa-solid fa-medal text-slate-500"></i></span>`;
-                } else if (posicao === 3) {
-                    iconePosicao = `<span class="w-7 h-7 rounded-full bg-amber-50 text-amber-700 font-bold flex items-center justify-center mx-auto text-xs"><i class="fa-solid fa-medal text-amber-600"></i></span>`;
-                }
-
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-4 text-center">${iconePosicao}</td>
+                        <td class="p-4 text-center"><span class="w-7 h-7 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center mx-auto text-xs">${index + 1}º</span></td>
                         <td class="p-4 font-bold text-slate-900">${item.nome}</td>
                         <td class="p-4 text-center font-extrabold text-indigo-600">${item.qtdTotal} un</td>
                         <td class="p-4 text-right font-extrabold text-slate-800">R$ ${item.faturamento.toFixed(2).replace('.', ',')}</td>
@@ -1040,82 +1349,33 @@
         // --- FINANCEIRO ---
         function alternarTipoFiltroPeriodo() {
             const tipo = document.getElementById('filtro-tipo-periodo').value;
-            const blocoMes = document.getElementById('bloco-filtro-mes');
-            const blocoCustom = document.getElementById('bloco-filtro-custom');
-
-            blocoMes.classList.add('hidden');
-            blocoCustom.classList.add('hidden');
-
-            if (tipo === 'mes') {
-                blocoMes.classList.remove('hidden');
-            } else if (tipo === 'custom') {
-                blocoCustom.classList.remove('hidden');
-            }
+            document.getElementById('bloco-filtro-mes').classList.toggle('hidden', tipo !== 'mes');
+            document.getElementById('bloco-filtro-custom').classList.toggle('hidden', tipo !== 'custom');
             carregarFinanceiro();
         }
 
         async function carregarFinanceiro() {
             const { data, error } = await sb.from('financeiro').select('*').order('id', { ascending: false });
-            if (error) { console.error(error); return; }
-
-            const tipoFiltro = document.getElementById('filtro-tipo-periodo')?.value || 'geral';
-            let dadosFiltrados = data || [];
-
-            if (tipoFiltro === 'mes') {
-                const mesAnoVal = document.getElementById('filtro-mes-ano').value;
-                if (mesAnoVal) {
-                    dadosFiltrados = dadosFiltrados.filter(item => {
-                        const dataRef = item.data || item.created_at;
-                        if (!dataRef) return false;
-                        return dataRef.startsWith(mesAnoVal);
-                    });
-                }
-            } else if (tipoFiltro === 'custom') {
-                const dataInicio = document.getElementById('filtro-data-inicio').value;
-                const dataFim = document.getElementById('filtro-data-fim').value;
-                if (dataInicio && dataFim) {
-                    dadosFiltrados = dadosFiltrados.filter(item => {
-                        const dataRef = item.data || item.created_at;
-                        if (!dataRef) return false;
-                        const dataItem = dataRef.split('T')[0];
-                        return dataItem >= dataInicio && dataItem <= dataFim;
-                    });
-                }
-            }
-
+            if (error) return;
             const tbody = document.getElementById('tabela-financeiro');
             if(!tbody) return;
             tbody.innerHTML = '';
             let totalEntrada = 0, totalSaida = 0;
 
-            if (!dadosFiltrados || dadosFiltrados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum lançamento encontrado para o período.</td></tr>`;
-                document.getElementById('card-entrada').innerText = `R$ 0,00`;
-                document.getElementById('card-saida').innerText = `R$ 0,00`;
-                document.getElementById('card-lucro').innerText = `R$ 0,00`;
-                return;
-            }
-
-            dadosFiltrados.forEach(item => {
+            (data || []).forEach(item => {
                 const isEntrada = item.tipo === 'entrada';
                 const val = Number(item.valor || 0);
                 if (isEntrada) totalEntrada += val; else totalSaida += val;
-                const badge = isEntrada ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600';
-                const corVal = isEntrada ? 'text-emerald-600' : 'text-red-600';
-                const prefixo = isEntrada ? '+ R$ ' : '- R$ ';
-                const dataRef = item.data || item.created_at;
-                const dataFmt = dataRef ? new Date(dataRef + (dataRef.includes('T') ? '' : 'T00:00:00')).toLocaleDateString('pt-BR') : '--/--/----';
+                const dataFmt = item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '--/--/----';
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="p-4 text-slate-500">${dataFmt}</td>
-                        <td class="p-4"><span class="${badge} font-bold px-2.5 py-1 rounded-full text-[10px]">${item.tipo.toUpperCase()}</span></td>
+                        <td class="p-4"><span class="${isEntrada ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'} font-bold px-2.5 py-1 rounded-full text-[10px]">${item.tipo.toUpperCase()}</span></td>
                         <td class="p-4 font-bold text-slate-900">${item.descricao}</td>
                         <td class="p-4 text-slate-500">${item.categoria}</td>
-                        <td class="p-4 text-right font-extrabold ${corVal}">${prefixo}${val.toFixed(2).replace('.', ',')}</td>
-                        <td class="p-4 text-center">
-                            <button onclick="excluirLancamento(${item.id})" class="text-slate-400 hover:text-red-600 p-1" title="Excluir Lançamento"><i class="fa-solid fa-trash"></i></button>
-                        </td>
+                        <td class="p-4 text-right font-extrabold ${isEntrada ? 'text-emerald-600' : 'text-red-600'}">${isEntrada ? '+ R$ ' : '- R$ '}${val.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 text-center"><button onclick="excluirLancamento(${item.id})" class="text-slate-400 hover:text-red-600 p-1"><i class="fa-solid fa-trash"></i></button></td>
                     </tr>
                 `;
             });
@@ -1126,54 +1386,9 @@
         }
 
         async function excluirLancamento(id) {
-            if (!confirm('Deseja realmente excluir este lançamento financeiro?')) return;
-            const { error } = await sb.from('financeiro').delete().eq('id', id);
-            if (error) { alert('Erro ao excluir lançamento.'); console.error(error); return; }
+            if (!confirm('Deseja excluir este lançamento?')) return;
+            await sb.from('financeiro').delete().eq('id', id);
             carregarFinanceiro();
-        }
-
-        function gerarRelatorioFinanceiroPDF() {
-            const tabelaOriginal = document.getElementById('tabela-financeiro');
-            const cloneTabela = tabelaOriginal.cloneNode(true);
-            cloneTabela.querySelectorAll('tr').forEach(tr => { if(tr.lastElementChild) tr.lastElementChild.remove(); });
-
-            const entrada = document.getElementById('card-entrada').innerText;
-            const saida = document.getElementById('card-saida').innerText;
-            const lucro = document.getElementById('card-lucro').innerText;
-
-            const janela = window.open('', '_blank', 'width=800,height=700');
-            janela.document.write(`
-                <html>
-                <head><title>Relatório Financeiro</title>
-                <style>
-                    body { font-family: sans-serif; font-size: 12px; padding: 20px; color: #333; }
-                    .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-                    .cards { display: flex; justify-content: space-around; margin-bottom: 20px; gap: 10px; }
-                    .card { border: 1px solid #ccc; padding: 10px; border-radius: 8px; text-align: center; flex: 1; background: #f9fafb; }
-                    .card h4 { margin: 0 0 5px 0; font-size: 11px; color: #666; text-transform: uppercase; }
-                    .card span { font-size: 16px; font-weight: bold; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    th { background-color: #f3f4f6; }
-                </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h2>${DADOS_EMPRESA.nome}</h2>
-                        <div>CNPJ: ${DADOS_EMPRESA.cnpj} | ${DADOS_EMPRESA.endereco}</div>
-                        <h3>Relatório Financeiro Gerencial</h3>
-                    </div>
-                    <div class="cards">
-                        <div class="card"><h4>Faturamento (Entrada)</h4><span style="color: #059669;">${entrada}</span></div>
-                        <div class="card"><h4>Despesas (Saída)</h4><span style="color: #dc2626;">${saida}</span></div>
-                        <div class="card"><h4>Lucro Líquido</h4><span style="color: #4f46e5;">${lucro}</span></div>
-                    </div>
-                    <table>${cloneTabela.innerHTML}</table>
-                </body>
-                </html>
-            `);
-            janela.document.close();
-            setTimeout(() => { janela.print(); janela.close(); }, 500);
         }
 
         function abrirModalFinanceiro() { document.getElementById('modal-financeiro').classList.remove('hidden'); }
@@ -1184,16 +1399,15 @@
             const descricao = document.getElementById('lanc-desc').value;
             const categoria = document.getElementById('lanc-cat').value;
             const valor = parseFloat(document.getElementById('lanc-valor').value) || 0;
-            if (!descricao || valor <= 0) { alert('Preencha todos os campos!'); return; }
+            if (!descricao || valor <= 0) { alert('Preencha os campos!'); return; }
             await sb.from('financeiro').insert([{ tipo, descricao, categoria, valor }]);
             fecharModalFinanceiro();
             carregarFinanceiro();
         }
 
-        // --- ESTOQUE COM VALIDADE E NOTA FISCAL ANEXADA ---
+        // --- ESTOQUE ---
         async function carregarEstoque() {
-            const { data, error } = await sb.from('produtos').select('*').order('id', { ascending: false });
-            if (error) { console.error(error); return; }
+            const { data } = await sb.from('produtos').select('*').order('id', { ascending: false });
             listaEstoqueGlobal = data || [];
             renderizarTabelaEstoque(listaEstoqueGlobal);
         }
@@ -1202,51 +1416,24 @@
             const tbody = document.getElementById('tabela-estoque');
             if(!tbody) return;
             tbody.innerHTML = '';
-            if (!dados || dados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-400">Nenhum produto encontrado.</td></tr>`;
-                return;
-            }
-
-            const hoje = new Date();
-
-            dados.forEach(prod => {
+            (dados || []).forEach(prod => {
                 const qtd = prod.estoque ?? 0;
-                let statusValidadeHtml = '<span class="text-slate-400 text-[10px]">Sem data</span>';
-                let alertaEstoque = qtd <= 5 ? '<span class="bg-red-50 text-red-600 font-bold px-2 py-0.5 rounded-full text-[10px] block text-center mt-1">Baixo</span>' : '<span class="bg-emerald-50 text-emerald-600 font-bold px-2 py-0.5 rounded-full text-[10px] block text-center mt-1">Normal</span>';
-
-                if (prod.validade) {
-                    const dataVal = new Date(prod.validade + 'T00:00:00');
-                    const diffDias = Math.ceil((dataVal - hoje) / (1000 * 60 * 60 * 24));
-                    const dataFmt = dataVal.toLocaleDateString('pt-BR');
-
-                    if (diffDias < 0) {
-                        statusValidadeHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-1 rounded-full text-[10px]">Vencido (${dataFmt})</span>`;
-                    } else if (diffDias <= 7) {
-                        statusValidadeHtml = `<span class="bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full text-[10px]">Vence em ${diffDias}d (${dataFmt})</span>`;
-                    } else {
-                        statusValidadeHtml = `<span class="text-slate-600 font-semibold">${dataFmt}</span>`;
-                    }
-                }
-
                 let botaoNF = `<span class="text-slate-400 text-[10px]">Nenhuma</span>`;
                 if (prod.status && prod.status.startsWith('NF:')) {
-                    const nfConteudo = prod.status.replace('NF:', '');
-                    botaoNF = `<button onclick="verNotaFiscal('${encodeURIComponent(nfConteudo)}')" class="bg-sky-50 hover:bg-sky-100 text-sky-600 font-bold px-2.5 py-1 rounded-lg text-[10px] transition"><i class="fa-solid fa-eye"></i> Ver NF</button>`;
+                    botaoNF = `<button onclick="verNotaFiscal('${encodeURIComponent(prod.status.replace('NF:', ''))}')" class="bg-sky-50 hover:bg-sky-100 text-sky-600 font-bold px-2.5 py-1 rounded-lg text-[10px] transition"><i class="fa-solid fa-eye"></i> Ver NF</button>`;
                 }
-
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="p-4 font-bold text-slate-900">${prod.nome}</td>
                         <td class="p-4 text-slate-500">${prod.categoria}</td>
-                        <td class="p-4 font-extrabold ${qtd <= 5 ? 'text-red-600' : 'text-slate-900'}">${qtd} un ${alertaEstoque}</td>
-                        <td class="p-4">${statusValidadeHtml}</td>
+                        <td class="p-4 font-extrabold ${qtd <= 5 ? 'text-red-600' : 'text-slate-900'}">${qtd} un</td>
+                        <td class="p-4">${prod.validade || 'Sem data'}</td>
                         <td class="p-4 text-slate-500">R$ ${Number(prod.preco_custo || 0).toFixed(2).replace('.', ',')}</td>
                         <td class="p-4 font-extrabold text-indigo-600">R$ ${Number(prod.preco_venda || 0).toFixed(2).replace('.', ',')}</td>
                         <td class="p-4 text-center">${botaoNF}</td>
                         <td class="p-4 text-center"><span class="bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-full text-[10px]">Ativo</span></td>
-                        <td class="p-4 text-right flex items-center justify-end gap-1">
-                            <button onclick="abrirModalEditarProduto(${prod.id})" class="text-slate-400 hover:text-indigo-600 p-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="excluirProduto(${prod.id})" class="text-slate-400 hover:text-red-600 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        <td class="p-4 text-right">
+                            <button onclick="excluirProduto(${prod.id})" class="text-slate-400 hover:text-red-600 p-1"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -1255,104 +1442,51 @@
 
         function filtrarEstoque() {
             const termo = document.getElementById('busca-estoque').value.toLowerCase();
-            const filtrados = listaEstoqueGlobal.filter(p => p.nome.toLowerCase().includes(termo) || p.categoria.toLowerCase().includes(termo));
-            renderizarTabelaEstoque(filtrados);
+            renderizarTabelaEstoque(listaEstoqueGlobal.filter(p => p.nome.toLowerCase().includes(termo)));
         }
 
         function converterArquivoNF(input) {
             const arquivo = input.files[0];
             if (!arquivo) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('input-nf-base64').value = e.target.result;
-            };
+            reader.onload = e => document.getElementById('input-nf-base64').value = e.target.result;
             reader.readAsDataURL(arquivo);
         }
 
-        function abrirModalNovoProduto() {
-            document.getElementById('modal-produto-titulo').innerHTML = `<i class="fa-solid fa-box text-indigo-600"></i> Cadastrar Produto`;
-            document.getElementById('input-produto-id').value = '';
-            document.getElementById('input-nome').value = '';
-            document.getElementById('input-qtd').value = '';
-            document.getElementById('input-validade').value = '';
-            document.getElementById('input-nf-arquivo').value = '';
-            document.getElementById('input-nf-base64').value = '';
-            document.getElementById('input-custo').value = '';
-            document.getElementById('input-venda').value = '';
-            document.getElementById('modal-produto').classList.remove('hidden');
-        }
-
-        function abrirModalEditarProduto(id) {
-            const prod = listaEstoqueGlobal.find(p => p.id === id);
-            if (!prod) return;
-            document.getElementById('modal-produto-titulo').innerHTML = `<i class="fa-solid fa-pen-to-square text-indigo-600"></i> Editar Produto`;
-            document.getElementById('input-produto-id').value = prod.id;
-            document.getElementById('input-nome').value = prod.nome;
-            document.getElementById('input-categoria').value = prod.categoria;
-            document.getElementById('input-qtd').value = prod.estoque ?? 0;
-            document.getElementById('input-validade').value = prod.validade || '';
-            document.getElementById('input-nf-arquivo').value = '';
-            document.getElementById('input-nf-base64').value = (prod.status && prod.status.startsWith('NF:')) ? prod.status.replace('NF:', '') : '';
-            document.getElementById('input-custo').value = prod.preco_custo || 0;
-            document.getElementById('input-venda').value = prod.preco_venda || 0;
-            document.getElementById('modal-produto').classList.remove('hidden');
-        }
-
+        function abrirModalNovoProduto() { document.getElementById('modal-produto').classList.remove('hidden'); }
         function fecharModalProduto() { document.getElementById('modal-produto').classList.add('hidden'); }
 
         function verNotaFiscal(nfEncoded) {
-            const nfConteudo = decodeURIComponent(nfEncoded);
+            const conteudo = decodeURIComponent(nfEncoded);
             const container = document.getElementById('container-conteudo-nf');
-            
-            if (nfConteudo.startsWith('data:image/')) {
-                container.innerHTML = `<img src="${nfConteudo}" class="max-w-full max-h-[55vh] rounded-lg shadow-md mx-auto object-contain">`;
-            } else if (nfConteudo.startsWith('data:application/pdf')) {
-                container.innerHTML = `<iframe src="${nfConteudo}" class="w-full h-[55vh] rounded-lg border border-slate-200"></iframe>`;
-            } else {
-                container.innerHTML = `<div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 font-bold break-all">${nfConteudo}</div>`;
-            }
+            container.innerHTML = conteudo.startsWith('data:image/') ? `<img src="${conteudo}" class="max-w-full max-h-[55vh] rounded-lg shadow-md mx-auto object-contain">` : `<iframe src="${conteudo}" class="w-full h-[55vh] rounded-lg border border-slate-200"></iframe>`;
             document.getElementById('modal-ver-nf').classList.remove('hidden');
         }
         function fecharModalNF() { document.getElementById('modal-ver-nf').classList.add('hidden'); }
 
         async function salvarProduto() {
-            const id = document.getElementById('input-produto-id').value;
             const nome = document.getElementById('input-nome').value;
             const categoria = document.getElementById('input-categoria').value;
             const estoque = parseInt(document.getElementById('input-qtd').value) || 0;
             const validade = document.getElementById('input-validade').value || null;
             const preco_custo = parseFloat(document.getElementById('input-custo').value) || 0;
             const preco_venda = parseFloat(document.getElementById('input-venda').value) || 0;
-            let nfBase64 = document.getElementById('input-nf-base64').value;
-
-            if (!nome) { alert('Digite o nome do produto!'); return; }
-
-            if (!nfBase64 && id) {
-                const prodAntigo = listaEstoqueGlobal.find(p => p.id == id);
-                if (prodAntigo && prodAntigo.status && prodAntigo.status.startsWith('NF:')) {
-                    nfBase64 = prodAntigo.status.replace('NF:', '');
-                }
-            }
-
-            const statusFinal = nfBase64 ? `NF:${nfBase64}` : 'Normal';
-
-            if (id) {
-                await sb.from('produtos').update({ nome, categoria, estoque, validade, preco_custo, preco_venda, status: statusFinal }).eq('id', id);
-            } else {
-                await sb.from('produtos').insert([{ nome, categoria, estoque, validade, preco_custo, preco_venda, status: statusFinal }]);
-            }
-
+            const nfBase64 = document.getElementById('input-nf-base64').value;
+            if (!nome) { alert('Digite o nome!'); return; }
+            await sb.from('produtos').insert([{ nome, categoria, estoque, validade, preco_custo, preco_venda, status: nfBase64 ? `NF:${nfBase64}` : 'Normal' }]);
             fecharModalProduto();
             carregarEstoque();
             carregarPDV();
         }
 
         async function excluirProduto(id) {
-            if (!confirm('Deseja excluir este produto?')) return;
+            if (!confirm('Excluir produto?')) return;
             await sb.from('produtos').delete().eq('id', id);
             carregarEstoque();
             carregarPDV();
         }
+
+        function gerarRelatorioFinanceiroPDF() { window.print(); }
     </script>
 </body>
 </html>
