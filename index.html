@@ -49,7 +49,7 @@
                     <i class="fa-solid fa-boxes-stacked"></i> Estoque
                 </button>
                 <button onclick="mudarAba('rank')" id="btn-aba-rank" class="px-3 py-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 flex items-center gap-1.5">
-                    <i class="fa-solid fa-trophy"></i> Rank de Vendas
+                    <i class="fa-solid fa-trophy text-amber-500"></i> Rank de Vendas
                 </button>
             </nav>
 
@@ -255,62 +255,54 @@
             </div>
         </section>
 
-        <!-- ABA 4: RANK DE VENDAS (REESTRUTURADA DO ZERO) -->
+        <!-- ABA 4: RANK DE VENDAS -->
         <section id="aba-rank" class="hidden space-y-6">
-            <!-- Cabeçalho de Destaque / Pódio -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- 2º Lugar -->
-                <div id="podium-2" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between relative overflow-hidden order-2 md:order-1">
-                    <div class="absolute top-0 right-0 bg-slate-200 text-slate-700 font-extrabold text-[10px] px-3 py-1 rounded-bl-xl">2º LUGAR</div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-trophy"></i></div>
                     <div>
-                        <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold mb-3"><i class="fa-solid fa-medal"></i></div>
-                        <span id="p2-nome" class="block font-bold text-slate-800 text-sm truncate">Nenhum</span>
-                        <span id="p2-cat" class="block text-[10px] text-slate-400 mb-2">--</span>
-                    </div>
-                    <div class="border-t border-slate-100 pt-3 flex justify-between items-center text-xs">
-                        <span class="text-slate-500 font-semibold">Qtd: <b id="p2-qtd" class="text-slate-800">0 un</b></span>
-                        <span class="text-emerald-600 font-extrabold" id="p2-lucro">R$ 0,00</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Campeão de Vendas</span>
+                        <span id="rank-card-campeao" class="text-base font-extrabold text-slate-900 truncate block max-w-[200px]">Nenhum</span>
                     </div>
                 </div>
-
-                <!-- 1º Lugar (Destaque Principal) -->
-                <div id="podium-1" class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 text-white shadow-md flex flex-col justify-between relative overflow-hidden order-1 md:order-2 transform md:-translate-y-2">
-                    <div class="absolute top-0 right-0 bg-yellow-300 text-amber-900 font-black text-[10px] px-3 py-1 rounded-bl-xl shadow-sm">1º LUGAR 👑</div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-boxes-stacked"></i></div>
                     <div>
-                        <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md text-yellow-200 flex items-center justify-center text-lg font-bold mb-3"><i class="fa-solid fa-crown"></i></div>
-                        <span id="p1-nome" class="block font-black text-white text-base truncate">Nenhum</span>
-                        <span id="p1-cat" class="block text-[10px] text-amber-100 mb-2">--</span>
-                    </div>
-                    <div class="border-t border-white/20 pt-3 flex justify-between items-center text-xs">
-                        <span class="text-amber-100 font-semibold">Qtd: <b id="p1-qtd" class="text-white">0 un</b></span>
-                        <span class="text-yellow-200 font-extrabold text-sm" id="p1-lucro">R$ 0,00</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Itens Vendidos</span>
+                        <span id="rank-card-qtd-total" class="text-2xl font-extrabold text-slate-900">0 un</span>
                     </div>
                 </div>
-
-                <!-- 3º Lugar -->
-                <div id="podium-3" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between relative overflow-hidden order-3">
-                    <div class="absolute top-0 right-0 bg-amber-700/10 text-amber-800 font-extrabold text-[10px] px-3 py-1 rounded-bl-xl">3º LUGAR</div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-sack-dollar"></i></div>
                     <div>
-                        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold mb-3"><i class="fa-solid fa-award"></i></div>
-                        <span id="p3-nome" class="block font-bold text-slate-800 text-sm truncate">Nenhum</span>
-                        <span id="p3-cat" class="block text-[10px] text-slate-400 mb-2">--</span>
-                    </div>
-                    <div class="border-t border-slate-100 pt-3 flex justify-between items-center text-xs">
-                        <span class="text-slate-500 font-semibold">Qtd: <b id="p3-qtd" class="text-slate-800">0 un</b></span>
-                        <span class="text-emerald-600 font-extrabold" id="p3-lucro">R$ 0,00</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Faturamento do Rank</span>
+                        <span id="rank-card-faturamento" class="text-2xl font-extrabold text-emerald-600">R$ 0,00</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Tabela Completa de Desempenho -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
-                    <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
-                        <i class="fa-solid fa-trophy text-amber-500"></i> Relatório Geral de Saída e Lucratividade
-                    </h3>
-                    <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                        <span>Total de itens monitorados: <strong id="rank-total-produtos" class="text-slate-800">0</strong></span>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <div class="flex flex-col">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Filtrar Período do Rank</label>
+                        <select id="rank-filtro-tipo" onchange="alternarFiltroRank()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 focus:outline-none focus:border-indigo-600">
+                            <option value="geral">Geral (Todo o Período)</option>
+                            <option value="mes">Mês Específico</option>
+                        </select>
                     </div>
+                    <div id="rank-bloco-mes" class="hidden flex flex-col">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Mês de Referência</label>
+                        <input type="month" id="rank-mes-ano" onchange="carregarRankVendas()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 focus:outline-none focus:border-indigo-600">
+                    </div>
+                </div>
+                <button onclick="carregarRankVendas()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-rotate"></i> Atualizar Rank
+                </button>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                    <h2 class="font-bold text-sm text-slate-900 flex items-center gap-2"><i class="fa-solid fa-medal text-amber-500"></i> Desempenho de Produtos Mais Vendidos</h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[700px]">
@@ -318,13 +310,12 @@
                             <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                 <th class="p-4 text-center w-16">Posição</th>
                                 <th class="p-4">Produto</th>
-                                <th class="p-4">Categoria</th>
-                                <th class="p-4 text-center">Qtd. Vendida</th>
-                                <th class="p-4 text-right">Faturamento</th>
-                                <th class="p-4 text-right">Lucro Líquido</th>
+                                <th class="p-4 text-center">Qtd. Total Vendida</th>
+                                <th class="p-4 text-right">Faturamento Gerado</th>
+                                <th class="p-4 text-right">Lucro Estimado</th>
                             </tr>
                         </thead>
-                        <tbody id="tabela-rank-produtos" class="divide-y divide-slate-100 text-xs font-medium text-slate-700"></tbody>
+                        <tbody id="tabela-rank" class="divide-y divide-slate-100 text-xs font-medium text-slate-700"></tbody>
                     </table>
                 </div>
             </div>
@@ -499,11 +490,14 @@
             const inputMesVendas = document.getElementById('filtro-mes-vendas');
             if(inputMesVendas) inputMesVendas.value = `${ano}-${mes}`;
 
+            const rankInputMes = document.getElementById('rank-mes-ano');
+            if(rankInputMes) rankInputMes.value = `${ano}-${mes}`;
+
             carregarPDV();
             carregarFinanceiro();
             carregarEstoque();
             carregarVendasCaixa();
-            carregarRankProdutos();
+            carregarRankVendas();
         });
 
         function mudarAba(aba) {
@@ -533,7 +527,7 @@
             } else if (aba === 'rank') {
                 document.getElementById('aba-rank').classList.remove('hidden');
                 document.getElementById('btn-aba-rank').className = "px-3 py-2 rounded-lg text-xs font-bold transition bg-white text-indigo-600 shadow-sm flex items-center gap-1.5";
-                carregarRankProdutos();
+                carregarRankVendas();
             }
         }
 
@@ -729,14 +723,15 @@
         }
 
         async function registrarVendaNoSupabase(vendaId, forma, total, itens) {
-            const vendaStr = '#' + vendaId;
-            await sb.from('vendas').insert([{ venda_id: vendaStr, cliente: 'Cliente Balcão', forma_pagamento: forma, total }]);
+            const vendaIdStr = String(vendaId); // Mantém limpo e idêntico para as duas tabelas
+            
+            await sb.from('vendas').insert([{ venda_id: vendaIdStr, cliente: 'Cliente Balcão', forma_pagamento: forma, total }]);
             
             const itensFmt = itens.map(i => {
                 const subtotal = i.preco * i.qtd;
                 const lucro_total = (i.preco - (i.custo || 0)) * i.qtd;
                 return { 
-                    venda_id: vendaStr, 
+                    venda_id: vendaIdStr, 
                     nome_produto: i.nome, 
                     qtd: i.qtd, 
                     preco: i.preco, 
@@ -793,7 +788,7 @@
                 carregarEstoque();
                 carregarFinanceiro();
                 carregarVendasCaixa();
-                carregarRankProdutos();
+                carregarRankVendas();
             } finally {
                 isProcessandoVenda = false;
                 if(btnConfirmar) btnConfirmar.disabled = false;
@@ -818,14 +813,14 @@
                 carregarEstoque();
                 carregarFinanceiro();
                 carregarVendasCaixa();
-                carregarRankProdutos();
+                carregarRankVendas();
             } finally {
                 isProcessandoVenda = false;
                 if(btnConcluir) btnConcluir.disabled = false;
             }
         }
 
-        // --- HISTÓRICO DE VENDAS DO CAIXA COM FILTRO DE MÊS ---
+        // --- HISTÓRICO DE VENDAS DO CAIXA ---
         let listaVendasCaixaGlobal = [];
         let itensVendasGlobal = [];
 
@@ -871,7 +866,7 @@
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-4 font-bold text-slate-900">${venda.venda_id}</td>
+                        <td class="p-4 font-bold text-slate-900">#${venda.venda_id}</td>
                         <td class="p-4 text-slate-500">${dataFmt}</td>
                         <td class="p-4 font-semibold text-slate-700">${formaPagto}</td>
                         <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${valorTotal.toFixed(2).replace('.', ',')}</td>
@@ -886,14 +881,14 @@
         }
 
         function baixarSegundaVia(vendaIdStr) {
-            const venda = listaVendasCaixaGlobal.find(v => v.venda_id === vendaIdStr);
+            const venda = listaVendasCaixaGlobal.find(v => String(vendaIdStr) === String(v.venda_id));
             if (!venda) return;
             const dataRef = venda.data_hora || venda.created_at;
             const dataFmt = dataRef ? new Date(dataRef).toLocaleString('pt-BR') : '--/--/---- --:--';
             const valorTotal = Number(venda.total || 0).toFixed(2).replace('.', ',');
             const formaPagto = venda.forma_pagamento || 'Dinheiro';
             
-            const itensVendaAtual = itensVendasGlobal.filter(i => i.venda_id === vendaIdStr);
+            const itensVendaAtual = itensVendasGlobal.filter(i => String(i.venda_id) === String(venda.venda_id));
             let itensHtml = '';
             
             if (itensVendaAtual.length > 0) {
@@ -917,7 +912,7 @@
                     <div style="text-align:center; font-size: 9px; margin-bottom: 4px;">${DADOS_EMPRESA.endereco}</div>
                     <div style="text-align:center; margin-top:5px; font-weight: bold;">** 2ª VIA DO CLIENTE **</div>
                     <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
-                    <div><b>ID Venda:</b> ${venda.venda_id}</div>
+                    <div><b>ID Venda:</b> #${venda.venda_id}</div>
                     <div><b>Data/Hora:</b> ${dataFmt}</div>
                     <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
                     <table style="width:100%;">
@@ -936,92 +931,107 @@
             setTimeout(() => { janela.print(); janela.close(); }, 500);
         }
 
-        // --- RANK DE PRODUTOS REESTRUTURADO DO ZERO ---
-        async function carregarRankProdutos() {
-            const [resProdutos, resItens] = await Promise.all([
-                sb.from('produtos').select('*'),
+        // --- RANK DE VENDAS ---
+        function alternarFiltroRank() {
+            const tipo = document.getElementById('rank-filtro-tipo').value;
+            const blocoMes = document.getElementById('rank-bloco-mes');
+            if (tipo === 'mes') {
+                blocoMes.classList.remove('hidden');
+            } else {
+                blocoMes.classList.add('hidden');
+            }
+            carregarRankVendas();
+        }
+
+        async function carregarRankVendas() {
+            const [resVendas, resItens] = await Promise.all([
+                sb.from('vendas').select('*'),
                 sb.from('itens_venda').select('*')
             ]);
 
-            const produtos = resProdutos.data || [];
-            const itensVenda = resItens.data || [];
+            const todasVendas = resVendas.data || [];
+            let todosItens = resItens.data || [];
 
-            const totalProdEl = document.getElementById('rank-total-produtos');
-            if(totalProdEl) totalProdEl.textContent = produtos.length;
+            const tipoFiltro = document.getElementById('rank-filtro-tipo')?.value || 'geral';
 
-            const mapaRank = {};
-            produtos.forEach(p => {
-                mapaRank[p.nome.toLowerCase()] = {
-                    nome: p.nome,
-                    categoria: p.categoria || 'Geral',
-                    qtdVendida: 0,
-                    faturamento: 0,
-                    lucroLiquido: 0
-                };
-            });
-
-            itensVenda.forEach(item => {
-                const nomeKey = (item.nome_produto || '').trim().toLowerCase();
-                if (!mapaRank[nomeKey]) {
-                    mapaRank[nomeKey] = {
-                        nome: item.nome_produto,
-                        categoria: 'Geral',
-                        qtdVendida: 0,
-                        faturamento: 0,
-                        lucroLiquido: 0
-                    };
+            if (tipoFiltro === 'mes') {
+                const mesAnoVal = document.getElementById('rank-mes-ano')?.value;
+                if (mesAnoVal) {
+                    const vendasFiltradasIds = new Set(
+                        todasVendas.filter(v => {
+                            const dataRef = v.data_hora || v.created_at;
+                            return dataRef && dataRef.startsWith(mesAnoVal);
+                        }).map(v => String(v.venda_id))
+                    );
+                    todosItens = todosItens.filter(item => vendasFiltradasIds.has(String(item.venda_id)));
                 }
-                mapaRank[nomeKey].qtdVendida += Number(item.qtd || 0);
-                mapaRank[nomeKey].faturamento += Number(item.subtotal || 0);
-                mapaRank[nomeKey].lucroLiquido += Number(item.lucro_total || 0);
+            }
+
+            const mapaProdutos = {};
+            let totalQtdGeral = 0;
+            let totalFaturamentoGeral = 0;
+
+            todosItens.forEach(item => {
+                const nomeProd = item.nome_produto || 'Produto Indefinido';
+                const qtd = Number(item.qtd || 0);
+                const subtotal = Number(item.subtotal || (item.preco * qtd) || 0);
+                const lucro = Number(item.lucro_total || 0);
+
+                totalQtdGeral += qtd;
+                totalFaturamentoGeral += subtotal;
+
+                if (!mapaProdutos[nomeProd]) {
+                    mapaProdutos[nomeProd] = { nome: nomeProd, qtdTotal: 0, faturamento: 0, lucroTotal: 0 };
+                }
+                mapaProdutos[nomeProd].qtdTotal += qtd;
+                mapaProdutos[nomeProd].faturamento += subtotal;
+                mapaProdutos[nomeProd].lucroTotal += lucro;
             });
 
-            const listaRank = Object.values(mapaRank).sort((a, b) => b.qtdVendida - a.qtdVendida);
+            const arrayRank = Object.values(mapaProdutos).sort((a, b) => b.qtdTotal - a.qtdTotal);
 
-            // Atualizar o Pódio (1º, 2º e 3º lugares)
-            const p1 = listaRank[0] || { nome: 'Nenhum', categoria: '--', qtdVendida: 0, lucroLiquido: 0 };
-            const p2 = listaRank[1] || { nome: 'Nenhum', categoria: '--', qtdVendida: 0, lucroLiquido: 0 };
-            const p3 = listaRank[2] || { nome: 'Nenhum', categoria: '--', qtdVendida: 0, lucroLiquido: 0 };
+            const elCampeao = document.getElementById('rank-card-campeao');
+            const elQtdTotal = document.getElementById('rank-card-qtd-total');
+            const elFaturamento = document.getElementById('rank-card-faturamento');
 
-            document.getElementById('p1-nome').textContent = p1.nome;
-            document.getElementById('p1-cat').textContent = p1.categoria;
-            document.getElementById('p1-qtd').textContent = `${p1.qtdVendida} un`;
-            document.getElementById('p1-lucro').textContent = `R$ ${p1.lucroLiquido.toFixed(2).replace('.', ',')}`;
+            if (arrayRank.length > 0) {
+                if(elCampeao) elCampeao.textContent = arrayRank[0].nome;
+                if(elQtdTotal) elQtdTotal.textContent = `${totalQtdGeral} un`;
+                if(elFaturamento) elFaturamento.textContent = `R$ ${totalFaturamentoGeral.toFixed(2).replace('.', ',')}`;
+            } else {
+                if(elCampeao) elCampeao.textContent = 'Nenhum';
+                if(elQtdTotal) elQtdTotal.textContent = '0 un';
+                if(elFaturamento) elFaturamento.textContent = 'R$ 0,00';
+            }
 
-            document.getElementById('p2-nome').textContent = p2.nome;
-            document.getElementById('p2-cat').textContent = p2.categoria;
-            document.getElementById('p2-qtd').textContent = `${p2.qtdVendida} un`;
-            document.getElementById('p2-lucro').textContent = `R$ ${p2.lucroLiquido.toFixed(2).replace('.', ',')}`;
-
-            document.getElementById('p3-nome').textContent = p3.nome;
-            document.getElementById('p3-cat').textContent = p3.categoria;
-            document.getElementById('p3-qtd').textContent = `${p3.qtdVendida} un`;
-            document.getElementById('p3-lucro').textContent = `R$ ${p3.lucroLiquido.toFixed(2).replace('.', ',')}`;
-
-            // Preencher Tabela de Classificação Geral
-            const tbody = document.getElementById('tabela-rank-produtos');
+            const tbody = document.getElementById('tabela-rank');
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            if (listaRank.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum produto cadastrado no ranking.</td></tr>`;
+            if (arrayRank.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Nenhum dado de venda registrado para compor o rank ainda.</td></tr>`;
                 return;
             }
 
-            listaRank.forEach((item, index) => {
-                let badgePosicao = `<span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center mx-auto text-xs">${index + 1}º</span>`;
-                if (index === 0) badgePosicao = `<span class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 font-extrabold flex items-center justify-center mx-auto text-xs shadow-sm"><i class="fa-solid fa-crown"></i></span>`;
-                else if (index === 1) badgePosicao = `<span class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-extrabold flex items-center justify-center mx-auto text-xs">2º</span>`;
-                else if (index === 2) badgePosicao = `<span class="w-7 h-7 rounded-full bg-amber-700/10 text-amber-800 font-extrabold flex items-center justify-center mx-auto text-xs">3º</span>`;
+            arrayRank.forEach((item, index) => {
+                const posicao = index + 1;
+                let iconePosicao = `<span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center mx-auto text-xs">${posicao}º</span>`;
+                
+                if (posicao === 1) {
+                    iconePosicao = `<span class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 font-black flex items-center justify-center mx-auto text-sm shadow-sm"><i class="fa-solid fa-trophy"></i></span>`;
+                } else if (posicao === 2) {
+                    iconePosicao = `<span class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center mx-auto text-xs"><i class="fa-solid fa-medal text-slate-500"></i></span>`;
+                } else if (posicao === 3) {
+                    iconePosicao = `<span class="w-7 h-7 rounded-full bg-amber-50 text-amber-700 font-bold flex items-center justify-center mx-auto text-xs"><i class="fa-solid fa-medal text-amber-600"></i></span>`;
+                }
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-4 text-center">${badgePosicao}</td>
+                        <td class="p-4 text-center">${iconePosicao}</td>
                         <td class="p-4 font-bold text-slate-900">${item.nome}</td>
-                        <td class="p-4 text-slate-500">${item.categoria}</td>
-                        <td class="p-4 text-center font-extrabold text-indigo-600">${item.qtdVendida} un</td>
+                        <td class="p-4 text-center font-extrabold text-indigo-600">${item.qtdTotal} un</td>
                         <td class="p-4 text-right font-extrabold text-slate-800">R$ ${item.faturamento.toFixed(2).replace('.', ',')}</td>
-                        <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${item.lucroLiquido.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${item.lucroTotal.toFixed(2).replace('.', ',')}</td>
                     </tr>
                 `;
             });
@@ -1335,7 +1345,6 @@
             fecharModalProduto();
             carregarEstoque();
             carregarPDV();
-            carregarRankProdutos();
         }
 
         async function excluirProduto(id) {
@@ -1343,7 +1352,6 @@
             await sb.from('produtos').delete().eq('id', id);
             carregarEstoque();
             carregarPDV();
-            carregarRankProdutos();
         }
     </script>
 </body>
