@@ -668,7 +668,12 @@
                 alert('Preencha o usuário e a senha!');
                 return;
             }
-            document.getElementById('tela-login-geral').classList.add('hidden');
+            // Validação do usuário admin
+            if(usuario === 'admin' && senha === '1234') {
+                document.getElementById('tela-login-geral').classList.add('hidden');
+            } else {
+                alert('Usuário ou senha incorretos!');
+            }
         }
 
         function tentarAcessarFinanceiro() {
