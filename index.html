@@ -97,10 +97,10 @@
         <section id="aba-caixa" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div class="lg:col-span-7 flex flex-col gap-4">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Buscar Produto</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">Buscar Produto ou Ler Código de Barras (USB)</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
-                        <input type="text" id="busca-pdv" oninput="filtrarProdutosPDV()" placeholder="Digite o nome da bebida..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-600 text-sm bg-slate-50">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-solid fa-barcode"></i></span>
+                        <input type="text" id="busca-pdv" oninput="filtrarProdutosPDV()" placeholder="Passe o leitor ou digite o nome/código..." class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-600 text-sm bg-slate-50">
                     </div>
                 </div>
 
@@ -357,6 +357,7 @@
                     <table class="w-full text-left border-collapse min-w-[800px]">
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="p-4">Cód. Barras</th>
                                 <th class="p-4">Produto</th>
                                 <th class="p-4">Categoria</th>
                                 <th class="p-4">Qtd. Estoque</th>
@@ -555,6 +556,10 @@
             <input type="hidden" id="input-produto-id">
             <div class="space-y-3">
                 <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Código de Barras</label>
+                    <input type="text" id="input-codigo-barras" placeholder="Passe o leitor ou digite o código de barras" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                </div>
+                <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Nome do Produto</label>
                     <input type="text" id="input-nome" placeholder="Ex: Cerveja 600ml" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
                 </div>
@@ -660,6 +665,39 @@
             carregarDadosFechamentoCaixa();
         });
 
+        // --- LEITOR ÓPTICO (CÓDIGO DE BARRAS USB) ---
+        let codigoBuffer = "";
+        let ultimoTempoKey = Date.now();
+
+        window.addEventListener('keydown', (e) => {
+            const agora = Date.now();
+            if (agora - ultimoTempoKey > 100) {
+                codigoBuffer = "";
+            }
+            ultimoTempoKey = agora;
+
+            if (e.key === 'Enter') {
+                if (codigoBuffer.trim().length > 2) {
+                    e.preventDefault();
+                    processarCodigoBarrasLido(codigoBuffer.trim());
+                    codigoBuffer = "";
+                }
+            } else if (e.key.length === 1) {
+                codigoBuffer += e.key;
+            }
+        });
+
+        function processarCodigoBarrasLido(codigo) {
+            const produto = produtosPDV.find(p => p.codigo_barras && p.codigo_barras.trim() === codigo);
+            if (produto) {
+                adicionarAoCarrinhoPorId(produto.id);
+                const inputPDV = document.getElementById('busca-pdv');
+                if (inputPDV) inputPDV.value = '';
+            } else {
+                alert(`Produto com o código de barras "${codigo}" não encontrado! Cadastre-o no estoque.`);
+            }
+        }
+
         // --- AUTENTICAÇÃO E CONTROLE DE ACESSO ---
         function realizarLoginGeral() {
             const usuario = document.getElementById('login-usuario').value;
@@ -668,7 +706,6 @@
                 alert('Preencha o usuário e a senha!');
                 return;
             }
-            // Validação do usuário admin
             if(usuario === 'admin' && senha === '1234') {
                 document.getElementById('tela-login-geral').classList.add('hidden');
             } else {
@@ -750,10 +787,7 @@
         async function carregarDadosFechamentoCaixa() {
             const dataHojeStr = new Date().toISOString().split('T')[0];
             const { data: vendas, error } = await sb.from('vendas').select('*');
-            if (error || !vendas) {
-                console.error("Erro ao carregar vendas para o fechamento:", error);
-                return;
-            }
+            if (error || !vendas) return;
 
             let p = 0, c = 0, d = 0, f = 0;
             vendas.forEach(v => {
@@ -765,7 +799,7 @@
                     else if (forma.includes('CARTÃO') || forma.includes('CARTAO')) c += val;
                     else if (forma.includes('DINHEIRO')) d += val;
                     else if (forma.includes('FIADO')) f += val;
-                    else d += val; // padrão Dinheiro
+                    else d += val;
                 }
             });
 
@@ -775,7 +809,6 @@
             document.getElementById('fc-total-cartao').textContent = `R$ ${c.toFixed(2).replace('.', ',')}`;
             document.getElementById('fc-total-dinheiro').textContent = `R$ ${d.toFixed(2).replace('.', ',')}`;
             document.getElementById('fc-total-fiado').textContent = `R$ ${f.toFixed(2).replace('.', ',')}`;
-
             document.getElementById('fc-resumo-esperado').textContent = `R$ ${d.toFixed(2).replace('.', ',')}`;
             calcularDiferencaCaixa();
             carregarHistoricoFechamentos();
@@ -790,13 +823,9 @@
             const difEl = document.getElementById('fc-resumo-diferenca');
             difEl.textContent = `R$ ${diferenca.toFixed(2).replace('.', ',')}`;
             
-            if (diferenca < 0) {
-                difEl.className = 'font-black text-red-600';
-            } else if (diferenca > 0) {
-                difEl.className = 'font-black text-indigo-600';
-            } else {
-                difEl.className = 'font-black text-emerald-600';
-            }
+            if (diferenca < 0) difEl.className = 'font-black text-red-600';
+            else if (diferenca > 0) difEl.className = 'font-black text-indigo-600';
+            else difEl.className = 'font-black text-emerald-600';
         }
 
         async function salvarFechamentoCaixa() {
@@ -804,13 +833,9 @@
             const dinheiroGaveta = parseFloat(document.getElementById('fc-dinheiro-gaveta').value) || 0;
             const observacoes = document.getElementById('fc-obs').value.trim();
 
-            if (!operador) {
-                alert('Informe o nome do operador responsable pelo caixa!');
-                return;
-            }
+            if (!operador) { alert('Informe o nome do operador responsável pelo caixa!'); return; }
 
             const totalGeralDia = totaisFechamentoDia.pix + totaisFechamentoDia.cartao + totaisFechamentoDia.dinheiro;
-
             const payload = {
                 operador,
                 dinheiro_gaveta: dinheiroGaveta,
@@ -822,11 +847,7 @@
             };
 
             const { error } = await sb.from('fechamento_caixa').insert([payload]);
-            if (error) {
-                alert('Erro ao salvar fechamento no banco de dados. Verifique a tabela no Supabase.');
-                console.error(error);
-                return;
-            }
+            if (error) { alert('Erro ao salvar fechamento no banco de dados.'); return; }
 
             alert('Fechamento de caixa salvo com sucesso!');
             document.getElementById('fc-operador').value = '';
@@ -878,23 +899,15 @@
             const arquivo = input.files[0];
             if (!arquivo) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('doc-arquivo-base64').value = e.target.result;
-            };
+            reader.onload = function(e) { document.getElementById('doc-arquivo-base64').value = e.target.result; };
             reader.readAsDataURL(arquivo);
         }
 
         async function salvarDocumentoCorp() {
             const titulo = document.getElementById('doc-titulo').value;
             const base64 = document.getElementById('doc-arquivo-base64').value;
-            if (!titulo || !base64) {
-                alert('Preencha o título e selecione um arquivo!');
-                return;
-            }
-            const { error } = await sb.from('documentos_corporativos').insert([{ titulo, arquivo: base64 }]);
-            if (error) {
-                console.warn("Tabela documentos_corporativos pode não existir no Supabase.", error);
-            }
+            if (!titulo || !base64) { alert('Preencha o título e selecione um arquivo!'); return; }
+            await sb.from('documentos_corporativos').insert([{ titulo, arquivo: base64 }]);
             document.getElementById('doc-titulo').value = '';
             document.getElementById('doc-arquivo-input').value = '';
             document.getElementById('doc-arquivo-base64').value = '';
@@ -934,7 +947,7 @@
             carregarDocumentosCorp();
         }
 
-        // --- FRENTE DE CAIXA ---
+        // --- FRENTE DE CAIXA E ESTOQUE ---
         async function carregarPDV() {
             const { data, error } = await sb.from('produtos').select('*').order('nome', { ascending: true });
             if (error) { console.error(error); return; }
@@ -970,7 +983,7 @@
 
         function filtrarProdutosPDV() {
             const termo = document.getElementById('busca-pdv').value.toLowerCase();
-            const filtrados = produtosPDV.filter(p => p.nome.toLowerCase().includes(termo) || p.categoria.toLowerCase().includes(termo));
+            const filtrados = produtosPDV.filter(p => p.nome.toLowerCase().includes(termo) || p.categoria.toLowerCase().includes(termo) || (p.codigo_barras && p.codigo_barras.toLowerCase().includes(termo)));
             renderizarProdutosPDV(filtrados);
         }
 
@@ -1102,9 +1115,7 @@
                                 <th style="text-align: right; font-size: 10px;">TOTAL</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            ${htmlItens}
-                        </tbody>
+                        <tbody>${htmlItens}</tbody>
                     </table>
                     <div class="line"></div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px;">
@@ -1180,9 +1191,7 @@
                 carregarEstoque();
                 carregarVendasCaixa();
                 carregarDadosFechamentoCaixa();
-            } finally {
-                isProcessandoVenda = false;
-            }
+            } finally { isProcessandoVenda = false; }
         }
 
         async function finalizarVendaGeral() {
@@ -1200,9 +1209,7 @@
                 carregarEstoque();
                 carregarVendasCaixa();
                 carregarDadosFechamentoCaixa();
-            } finally {
-                isProcessandoVenda = false;
-            }
+            } finally { isProcessandoVenda = false; }
         }
 
         // --- HISTÓRICO DE VENDAS ---
@@ -1228,7 +1235,6 @@
 
             const mesFiltroVal = document.getElementById('filtro-mes-vendas')?.value;
             let vendasFiltradas = listaVendasCaixaGlobal;
-
             if (mesFiltroVal) {
                 vendasFiltradas = listaVendasCaixaGlobal.filter(v => {
                     const dataRef = v.data_hora || v.created_at;
@@ -1272,130 +1278,190 @@
                 <body>
                     <div style="text-align:center; font-weight:bold; font-size: 13px;">${DADOS_EMPRESA.nome}</div>
                     <div style="text-align:center; font-size: 10px;">CNPJ: ${DADOS_EMPRESA.cnpj}</div>
-                    <div style="text-align:center; margin-top:5px; font-weight: bold;">** 2ª VIA DO CLIENTE **</div>
-                    <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
-                    <div><b>ID Venda:</b> #${venda.venda_id}</div>
-                    <div><b>Data/Hora:</b> ${dataFmt}</div>
-                    <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
-                    <table style="width:100%;">
-                        ${itensHtml}
-                    </table>
-                    <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
-                    <div style="text-align:right; font-weight:bold; font-size:13px;">TOTAL: R$ ${valorTotal}</div>
+                    <hr style="border-top:1px dashed #000; margin:5px 0;">
+                    <div><b>2ª VIA DO CLIENTE - Venda #${venda.venda_id}</b></div>
+                    <div>Data: ${dataFmt}</div>
+                    <hr style="border-top:1px dashed #000; margin:5px 0;">
+                    <table><thead><tr><th style="text-align:left;">Item</th><th style="text-align:center;">Qtd</th><th style="text-align:right;">Subtotal</th></tr></thead><tbody>${itensHtml}</tbody></table>
+                    <hr style="border-top:1px dashed #000; margin:5px 0;">
+                    <div style="display:flex; justify-content:space-between;"><span>Forma:</span><b>${venda.forma_pagamento}</b></div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:bold;"><span>Total:</span><span>R$ ${valorTotal}</span></div>
                 </body></html>
             `);
             janela.document.close();
-            setTimeout(() => { janela.print(); janela.close(); }, 500);
+            setTimeout(() => { janela.print(); janela.close(); }, 400);
         }
 
-        // --- RANK DE VENDAS ---
-        function alternarFiltroRank() {
-            const tipo = document.getElementById('rank-filtro-tipo').value;
-            document.getElementById('rank-bloco-mes').classList.toggle('hidden', tipo !== 'mes');
-            carregarRankVendas();
+        // --- GESTÃO DE ESTOQUE ---
+        async function carregarEstoque() {
+            const { data, error } = await sb.from('produtos').select('*').order('nome', { ascending: true });
+            if (error) { console.error(error); return; }
+            listaEstoqueGlobal = data || [];
+            renderizarEstoque(listaEstoqueGlobal);
         }
 
-        async function carregarRankVendas() {
-            const [resVendas, resItens] = await Promise.all([
-                sb.from('vendas').select('*'),
-                sb.from('itens_venda').select('*')
-            ]);
-            const todasVendas = resVendas.data || [];
-            let todosItens = resItens.data || [];
-            const tipoFiltro = document.getElementById('rank-filtro-tipo')?.value || 'geral';
-
-            if (tipoFiltro === 'mes') {
-                const mesAnoVal = document.getElementById('rank-mes-ano')?.value;
-                if (mesAnoVal) {
-                    const vendasFiltradasIds = new Set(todasVendas.filter(v => (v.data_hora || v.created_at)?.startsWith(mesAnoVal)).map(v => String(v.venda_id)));
-                    todosItens = todosItens.filter(item => vendasFiltradasIds.has(String(item.venda_id)));
-                }
+        function renderizarEstoque(lista) {
+            const tbody = document.getElementById('tabela-estoque');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if (!lista || lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-slate-400">Nenhum produto cadastrado no estoque.</td></tr>`;
+                return;
             }
+            lista.forEach(prod => {
+                const custo = Number(prod.preco_custo || 0).toFixed(2).replace('.', ',');
+                const venda = Number(prod.preco_venda || 0).toFixed(2).replace('.', ',');
+                const qtd = prod.estoque ?? 0;
+                let statusBadge = `<span class="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full font-bold">Disponível</span>`;
+                if (qtd <= 0) statusBadge = `<span class="bg-red-50 text-red-600 px-2 py-1 rounded-full font-bold">Esgotado</span>`;
+                else if (qtd <= 3) statusBadge = `<span class="bg-amber-50 text-amber-600 px-2 py-1 rounded-full font-bold">Baixo</span>`;
 
-            const mapaProdutos = {};
-            let totalQtdGeral = 0, totalFaturamentoGeral = 0;
+                const btnNF = prod.nota_fiscal ? `<button onclick="verNotaFiscal('${encodeURIComponent(prod.nota_fiscal)}')" class="text-indigo-600 hover:text-indigo-800 font-bold"><i class="fa-solid fa-file-pdf"></i> Ver</button>` : `<span class="text-slate-300">Não há</span>`;
 
-            todosItens.forEach(item => {
-                const nomeProd = item.nome_produto || 'Produto';
-                const qtd = Number(item.qtd || 0);
-                const subtotal = Number(item.subtotal || (item.preco * qtd) || 0);
-                const lucro = Number(item.lucro_total || 0);
-                totalQtdGeral += qtd;
-                totalFaturamentoGeral += subtotal;
-
-                if (!mapaProdutos[nomeProd]) mapaProdutos[nomeProd] = { nome: nomeProd, qtdTotal: 0, faturamento: 0, lucroTotal: 0 };
-                mapaProdutos[nomeProd].qtdTotal += qtd;
-                mapaProdutos[nomeProd].faturamento += subtotal;
-                mapaProdutos[nomeProd].lucroTotal += lucro;
-            });
-
-            const arrayRank = Object.values(mapaProdutos).sort((a, b) => b.qtdTotal - a.qtdTotal);
-            if (arrayRank.length > 0) {
-                document.getElementById('rank-card-campeao').textContent = arrayRank[0].nome;
-                document.getElementById('rank-card-qtd-total').textContent = `${totalQtdGeral} un`;
-                document.getElementById('rank-card-faturamento').textContent = `R$ ${totalFaturamentoGeral.toFixed(2).replace('.', ',')}`;
-            }
-
-            const tbody = document.getElementById('tabela-rank');
-            if (!tbody) return;
-            tbody.innerHTML = arrayRank.length === 0 ? `<tr><td colspan="5" class="p-6 text-center text-slate-400">Nenhum dado de venda registrado.</td></tr>` : '';
-
-            arrayRank.forEach((item, index) => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-4 text-center"><span class="w-7 h-7 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center mx-auto text-xs">${index + 1}º</span></td>
-                        <td class="p-4 font-bold text-slate-900">${item.nome}</td>
-                        <td class="p-4 text-center font-extrabold text-indigo-600">${item.qtdTotal} un</td>
-                        <td class="p-4 text-right font-extrabold text-slate-800">R$ ${item.faturamento.toFixed(2).replace('.', ',')}</td>
-                        <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${item.lucroTotal.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 font-mono text-slate-600 font-bold">${prod.codigo_barras || '--'}</td>
+                        <td class="p-4 font-bold text-slate-900">${prod.nome}</td>
+                        <td class="p-4 text-slate-500">${prod.categoria}</td>
+                        <td class="p-4 font-extrabold text-slate-800">${qtd} un</td>
+                        <td class="p-4 text-slate-500">${prod.validade || '--/--/----'}</td>
+                        <td class="p-4 text-slate-600">R$ ${custo}</td>
+                        <td class="p-4 font-extrabold text-emerald-600">R$ ${venda}</td>
+                        <td class="p-4 text-center">${btnNF}</td>
+                        <td class="p-4 text-center">${statusBadge}</td>
+                        <td class="p-4 text-right space-x-2">
+                            <button onclick="editarProduto(${prod.id})" class="text-slate-400 hover:text-indigo-600 p-1"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="excluirProduto(${prod.id})" class="text-slate-400 hover:text-red-600 p-1"><i class="fa-solid fa-trash"></i></button>
+                        </td>
                     </tr>
                 `;
             });
         }
 
-        // --- FINANCEIRO ---
-        function alternarTipoFiltroPeriodo() {
-            const tipo = document.getElementById('filtro-tipo-periodo').value;
-            document.getElementById('bloco-filtro-mes').classList.toggle('hidden', tipo !== 'mes');
-            document.getElementById('bloco-filtro-custom').classList.toggle('hidden', tipo !== 'custom');
-            carregarFinanceiro();
+        function filtrarEstoque() {
+            const termo = document.getElementById('busca-estoque').value.toLowerCase();
+            const filtrados = listaEstoqueGlobal.filter(p => p.nome.toLowerCase().includes(termo) || p.categoria.toLowerCase().includes(termo) || (p.codigo_barras && p.codigo_barras.toLowerCase().includes(termo)));
+            renderizarEstoque(filtrados);
         }
 
+        function abrirModalNovoProduto() {
+            document.getElementById('modal-produto-titulo').innerHTML = `<i class="fa-solid fa-box text-indigo-600"></i> Cadastrar Produto`;
+            document.getElementById('input-produto-id').value = '';
+            document.getElementById('input-codigo-barras').value = '';
+            document.getElementById('input-nome').value = '';
+            document.getElementById('input-qtd').value = '';
+            document.getElementById('input-validade').value = '';
+            document.getElementById('input-custo').value = '';
+            document.getElementById('input-venda').value = '';
+            document.getElementById('input-nf-base64').value = '';
+            document.getElementById('input-nf-arquivo').value = '';
+            document.getElementById('modal-produto').classList.remove('hidden');
+        }
+
+        function fecharModalProduto() { document.getElementById('modal-produto').classList.add('hidden'); }
+
+        function converterArquivoNF(input) {
+            const arquivo = input.files[0];
+            if (!arquivo) return;
+            const reader = new FileReader();
+            reader.onload = function(e) { document.getElementById('input-nf-base64').value = e.target.result; };
+            reader.readAsDataURL(arquivo);
+        }
+
+        async function salvarProduto() {
+            const id = document.getElementById('input-produto-id').value;
+            const codigo_barras = document.getElementById('input-codigo-barras').value.trim();
+            const nome = document.getElementById('input-nome').value.trim();
+            const categoria = document.getElementById('input-categoria').value;
+            const estoque = parseInt(document.getElementById('input-qtd').value) || 0;
+            const validade = document.getElementById('input-validade').value;
+            const preco_custo = parseFloat(document.getElementById('input-custo').value) || 0;
+            const preco_venda = parseFloat(document.getElementById('input-venda').value) || 0;
+            const nota_fiscal = document.getElementById('input-nf-base64').value;
+
+            if (!nome || preco_venda <= 0) { alert('Preencha o nome do produto e o preço de venda!'); return; }
+
+            const payload = { codigo_barras, nome, categoria, estoque, validade, preco_custo, preco_venda };
+            if (nota_fiscal) payload.nota_fiscal = nota_fiscal;
+
+            if (id) {
+                await sb.from('produtos').update(payload).eq('id', id);
+            } else {
+                await sb.from('produtos').insert([payload]);
+            }
+
+            fecharModalProduto();
+            carregarEstoque();
+            carregarPDV();
+            alert('Produto salvo com sucesso!');
+        }
+
+        function editarProduto(id) {
+            const prod = listaEstoqueGlobal.find(p => p.id === id);
+            if (!prod) return;
+            document.getElementById('modal-produto-titulo').innerHTML = `<i class="fa-solid fa-pen text-indigo-600"></i> Editar Produto`;
+            document.getElementById('input-produto-id').value = prod.id;
+            document.getElementById('input-codigo-barras').value = prod.codigo_barras || '';
+            document.getElementById('input-nome').value = prod.nome || '';
+            document.getElementById('input-categoria').value = prod.categoria || 'Cervejas';
+            document.getElementById('input-qtd').value = prod.estoque ?? 0;
+            document.getElementById('input-validade').value = prod.validade || '';
+            document.getElementById('input-custo').value = prod.preco_custo || '';
+            document.getElementById('input-venda').value = prod.preco_venda || '';
+            document.getElementById('input-nf-base64').value = prod.nota_fiscal || '';
+            document.getElementById('modal-produto').classList.remove('hidden');
+        }
+
+        async function excluirProduto(id) {
+            if (!confirm('Deseja excluir este produto do estoque?')) return;
+            await sb.from('produtos').delete().eq('id', id);
+            carregarEstoque();
+            carregarPDV();
+        }
+
+        function verNotaFiscal(base64Url) {
+            const urlDecodificada = decodeURIComponent(base64Url);
+            const container = document.getElementById('container-conteudo-nf');
+            if (urlDecodificada.startsWith('data:image')) {
+                container.innerHTML = `<img src="${urlDecodificada}" class="max-w-full rounded-lg shadow-md" />`;
+            } else {
+                container.innerHTML = `<iframe src="${urlDecodificada}" class="w-full h-[50vh] rounded-lg border"></iframe>`;
+            }
+            document.getElementById('modal-ver-nf').classList.remove('hidden');
+        }
+        function fecharModalNF() { document.getElementById('modal-ver-nf').classList.add('hidden'); }
+
+        // --- FINANCEIRO ---
         async function carregarFinanceiro() {
             const { data, error } = await sb.from('financeiro').select('*').order('id', { ascending: false });
             if (error) return;
+            let totalEntrada = 0, totalSaida = 0;
             const tbody = document.getElementById('tabela-financeiro');
             if(!tbody) return;
             tbody.innerHTML = '';
-            let totalEntrada = 0, totalSaida = 0;
 
             (data || []).forEach(item => {
-                const isEntrada = item.tipo === 'entrada';
                 const val = Number(item.valor || 0);
-                if (isEntrada) totalEntrada += val; else totalSaida += val;
-                const dataFmt = item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '--/--/----';
+                if (item.tipo === 'entrada') totalEntrada += val;
+                else totalSaida += val;
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-4 text-slate-500">${dataFmt}</td>
-                        <td class="p-4"><span class="${isEntrada ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'} font-bold px-2.5 py-1 rounded-full text-[10px]">${item.tipo.toUpperCase()}</span></td>
+                        <td class="p-4 text-slate-500">${new Date(item.created_at || Date.now()).toLocaleDateString('pt-BR')}</td>
+                        <td class="p-4 font-bold ${item.tipo === 'entrada' ? 'text-emerald-600' : 'text-red-600'} uppercase">${item.tipo}</td>
                         <td class="p-4 font-bold text-slate-900">${item.descricao}</td>
                         <td class="p-4 text-slate-500">${item.categoria}</td>
-                        <td class="p-4 text-right font-extrabold ${isEntrada ? 'text-emerald-600' : 'text-red-600'}">${isEntrada ? '+ R$ ' : '- R$ '}${val.toFixed(2).replace('.', ',')}</td>
-                        <td class="p-4 text-center"><button onclick="excluirLancamento(${item.id})" class="text-slate-400 hover:text-red-600 p-1"><i class="fa-solid fa-trash"></i></button></td>
+                        <td class="p-4 text-right font-extrabold ${item.tipo === 'entrada' ? 'text-emerald-600' : 'text-red-600'}">R$ ${val.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="excluirLancamento(${item.id})" class="text-slate-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
+                        </td>
                     </tr>
                 `;
             });
 
-            document.getElementById('card-entrada').innerText = `R$ ${totalEntrada.toFixed(2).replace('.', ',')}`;
-            document.getElementById('card-saida').innerText = `R$ ${totalSaida.toFixed(2).replace('.', ',')}`;
-            document.getElementById('card-lucro').innerText = `R$ ${(totalEntrada - totalSaida).toFixed(2).replace('.', ',')}`;
-        }
-
-        async function excluirLancamento(id) {
-            if (!confirm('Deseja excluir este lançamento?')) return;
-            await sb.from('financeiro').delete().eq('id', id);
-            carregarFinanceiro();
+            document.getElementById('card-entrada').textContent = `R$ ${totalEntrada.toFixed(2).replace('.', ',')}`;
+            document.getElementById('card-saida').textContent = `R$ ${totalSaida.toFixed(2).replace('.', ',')}`;
+            document.getElementById('card-lucro').textContent = `R$ ${(totalEntrada - totalSaida).toFixed(2).replace('.', ',')}`;
         }
 
         function abrirModalFinanceiro() { document.getElementById('modal-financeiro').classList.remove('hidden'); }
@@ -1406,156 +1472,96 @@
             const descricao = document.getElementById('lanc-desc').value;
             const categoria = document.getElementById('lanc-cat').value;
             const valor = parseFloat(document.getElementById('lanc-valor').value) || 0;
-            if (!descricao || valor <= 0) { alert('Preencha os campos!'); return; }
+
+            if (!descricao || valor <= 0) { alert('Preencha a descrição e o valor!'); return; }
             await sb.from('financeiro').insert([{ tipo, descricao, categoria, valor }]);
             fecharModalFinanceiro();
             carregarFinanceiro();
         }
 
-        // --- ESTOQUE ---
-        async function carregarEstoque() {
-            const { data } = await sb.from('produtos').select('*').order('id', { ascending: false });
-            listaEstoqueGlobal = data || [];
-            renderizarTabelaEstoque(listaEstoqueGlobal);
+        async function excluirLancamento(id) {
+            if(!confirm('Deseja excluir este lançamento?')) return;
+            await sb.from('financeiro').delete().eq('id', id);
+            carregarFinanceiro();
         }
 
-        function renderizarTabelaEstoque(dados) {
-            const tbody = document.getElementById('tabela-estoque');
+        function alternarTipoFiltroPeriodo() {
+            const tipo = document.getElementById('filtro-tipo-periodo').value;
+            document.getElementById('bloco-filtro-mes').classList.toggle('hidden', tipo !== 'mes');
+            document.getElementById('bloco-filtro-custom').classList.toggle('hidden', tipo !== 'custom');
+        }
+
+        function gerarRelatorioFinanceiroPDF() { window.print(); }
+
+        // --- RANK DE VENDAS ---
+        async function carregarRankVendas() {
+            const { data: itens, error } = await sb.from('itens_venda').select('*');
+            if (error || !itens) return;
+
+            let agrupado = {};
+            let qtdTotalGeral = 0;
+            let faturamentoTotalGeral = 0;
+
+            itens.forEach(i => {
+                const nome = i.nome_produto;
+                if (!agrupado[nome]) {
+                    agrupado[nome] = { qtd: 0, faturamento: 0, lucro: 0 };
+                }
+                agrupado[nome].qtd += Number(i.qtd || 0);
+                agrupado[nome].faturamento += Number(i.subtotal || 0);
+                agrupado[nome].lucro += Number(i.lucro_total || 0);
+
+                qtdTotalGeral += Number(i.qtd || 0);
+                faturamentoTotalGeral += Number(i.subtotal || 0);
+            });
+
+            let arrayRank = Object.keys(agrupado).map(nome => ({
+                nome,
+                qtd: agrupado[nome].qtd,
+                faturamento: agrupado[nome].faturamento,
+                lucro: agrupado[nome].lucro
+            })).sort((a, b) => b.qtd - a.qtd);
+
+            if (arrayRank.length > 0) {
+                document.getElementById('rank-card-campeao').textContent = arrayRank[0].nome;
+            } else {
+                document.getElementById('rank-card-campeao').textContent = 'Nenhum';
+            }
+
+            document.getElementById('rank-card-qtd-total').textContent = `${qtdTotalGeral} un`;
+            document.getElementById('rank-card-faturamento').textContent = `R$ ${faturamentoTotalGeral.toFixed(2).replace('.', ',')}`;
+
+            const tbody = document.getElementById('tabela-rank');
             if(!tbody) return;
             tbody.innerHTML = '';
-            (dados || []).forEach(prod => {
-                const qtd = prod.estoque ?? 0;
-                let botaoNF = `<span class="text-slate-400 text-[10px]">Nenhuma</span>`;
-                if (prod.status && prod.status.startsWith('NF:')) {
-                    botaoNF = `<button onclick="verNotaFiscal('${encodeURIComponent(prod.status.replace('NF:', ''))}')" class="bg-sky-50 hover:bg-sky-100 text-sky-600 font-bold px-2.5 py-1 rounded-lg text-[10px] transition"><i class="fa-solid fa-eye"></i> Ver NF</button>`;
-                }
+
+            if (arrayRank.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum dado de vendas registrado para o rank.</td></tr>`;
+                return;
+            }
+
+            arrayRank.forEach((item, index) => {
+                let badgePos = `<span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center mx-auto">${index + 1}º</span>`;
+                if (index === 0) badgePos = `<span class="w-7 h-7 rounded-full bg-amber-100 text-amber-600 font-bold flex items-center justify-center mx-auto">1º</span>`;
+                else if (index === 1) badgePos = `<span class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center mx-auto">2º</span>`;
+                else if (index === 2) badgePos = `<span class="w-7 h-7 rounded-full bg-amber-50 text-amber-700 font-bold flex items-center justify-center mx-auto">3º</span>`;
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-4 font-bold text-slate-900">${prod.nome}</td>
-                        <td class="p-4 text-slate-500">${prod.categoria}</td>
-                        <td class="p-4 font-extrabold ${qtd <= 5 ? 'text-red-600' : 'text-slate-900'}">${qtd} un</td>
-                        <td class="p-4">${prod.validade || 'Sem data'}</td>
-                        <td class="p-4 text-slate-500">R$ ${Number(prod.preco_custo || 0).toFixed(2).replace('.', ',')}</td>
-                        <td class="p-4 font-extrabold text-indigo-600">R$ ${Number(prod.preco_venda || 0).toFixed(2).replace('.', ',')}</td>
-                        <td class="p-4 text-center">${botaoNF}</td>
-                        <td class="p-4 text-center"><span class="bg-slate-100 text-slate-700 font-bold px-2 py-1 rounded-full text-[10px]">Ativo</span></td>
-                        <td class="p-4 text-right">
-                            <button onclick="abrirModalEditarProduto(${prod.id})" class="text-slate-400 hover:text-indigo-600 p-1 mr-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="excluirProduto(${prod.id})" class="text-slate-400 hover:text-red-600 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
-                        </td>
+                        <td class="p-4 text-center">${badgePos}</td>
+                        <td class="p-4 font-bold text-slate-900">${item.nome}</td>
+                        <td class="p-4 text-center font-extrabold text-indigo-600">${item.qtd} un</td>
+                        <td class="p-4 text-right font-bold text-slate-800">R$ ${item.faturamento.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${item.lucro.toFixed(2).replace('.', ',')}</td>
                     </tr>
                 `;
             });
         }
 
-        function filtrarEstoque() {
-            const termo = document.getElementById('busca-estoque').value.toLowerCase();
-            renderizarTabelaEstoque(listaEstoqueGlobal.filter(p => p.nome.toLowerCase().includes(termo)));
+        function alternarFiltroRank() {
+            const tipo = document.getElementById('rank-filtro-tipo').value;
+            document.getElementById('rank-bloco-mes').classList.toggle('hidden', tipo !== 'mes');
         }
-
-        function converterArquivoNF(input) {
-            const arquivo = input.files[0];
-            if (!arquivo) return;
-            const reader = new FileReader();
-            reader.onload = e => document.getElementById('input-nf-base64').value = e.target.result;
-            reader.readAsDataURL(arquivo);
-        }
-
-        function abrirModalNovoProduto() {
-            document.getElementById('modal-produto-titulo').innerHTML = `<i class="fa-solid fa-box text-indigo-600"></i> Cadastrar Produto`;
-            document.getElementById('input-produto-id').value = '';
-            document.getElementById('input-nome').value = '';
-            document.getElementById('input-categoria').value = 'Cervejas';
-            document.getElementById('input-qtd').value = '';
-            document.getElementById('input-validade').value = '';
-            document.getElementById('input-custo').value = '';
-            document.getElementById('input-venda').value = '';
-            document.getElementById('input-nf-base64').value = '';
-            document.getElementById('input-nf-arquivo').value = '';
-            document.getElementById('modal-produto').classList.remove('hidden');
-        }
-
-        function abrirModalEditarProduto(id) {
-            const prod = listaEstoqueGlobal.find(p => p.id === id);
-            if (!prod) return;
-
-            document.getElementById('modal-produto-titulo').innerHTML = `<i class="fa-solid fa-pen-to-square text-indigo-600"></i> Editar Produto`;
-            document.getElementById('input-produto-id').value = prod.id;
-            document.getElementById('input-nome').value = prod.nome || '';
-            document.getElementById('input-categoria').value = prod.categoria || 'Cervejas';
-            document.getElementById('input-qtd').value = prod.estoque ?? '';
-            document.getElementById('input-validade').value = prod.validade || '';
-            document.getElementById('input-custo').value = prod.preco_custo ?? '';
-            document.getElementById('input-venda').value = prod.preco_venda ?? '';
-            document.getElementById('input-nf-base64').value = prod.status && prod.status.startsWith('NF:') ? prod.status.replace('NF:', '') : '';
-            document.getElementById('input-nf-arquivo').value = '';
-            
-            document.getElementById('modal-produto').classList.remove('hidden');
-        }
-
-        function fecharModalProduto() { document.getElementById('modal-produto').classList.add('hidden'); }
-
-        function verNotaFiscal(nfEncoded) {
-            const conteudo = decodeURIComponent(nfEncoded);
-            const container = document.getElementById('container-conteudo-nf');
-            container.innerHTML = conteudo.startsWith('data:image/') ? `<img src="${conteudo}" class="max-w-full max-h-[55vh] rounded-lg shadow-md mx-auto object-contain">` : `<iframe src="${conteudo}" class="w-full h-[55vh] rounded-lg border border-slate-200"></iframe>`;
-            document.getElementById('modal-ver-nf').classList.remove('hidden');
-        }
-        function fecharModalNF() { document.getElementById('modal-ver-nf').classList.add('hidden'); }
-
-        async function salvarProduto() {
-            const id = document.getElementById('input-produto-id').value;
-            const nome = document.getElementById('input-nome').value;
-            const categoria = document.getElementById('input-categoria').value;
-            const estoque = parseInt(document.getElementById('input-qtd').value) || 0;
-            const validade = document.getElementById('input-validade').value || null;
-            const preco_custo = parseFloat(document.getElementById('input-custo').value) || 0;
-            const preco_venda = parseFloat(document.getElementById('input-venda').value) || 0;
-            const nfBase64 = document.getElementById('input-nf-base64').value;
-
-            if (!nome) { alert('Digite o nome!'); return; }
-
-            const dadosPayload = {
-                nome,
-                categoria,
-                estoque,
-                validade,
-                preco_custo,
-                preco_venda,
-                status: nfBase64 ? `NF:${nfBase64}` : 'Normal'
-            };
-
-            if (id) {
-                // Atualizar produto existente
-                const { error } = await sb.from('produtos').update(dadosPayload).eq('id', id);
-                if (error) {
-                    alert('Erro ao atualizar produto no banco.');
-                    console.error(error);
-                    return;
-                }
-            } else {
-                // Inserir novo produto
-                const { error } = await sb.from('produtos').insert([dadosPayload]);
-                if (error) {
-                    alert('Erro ao cadastrar produto no banco.');
-                    console.error(error);
-                    return;
-                }
-            }
-
-            fecharModalProduto();
-            carregarEstoque();
-            carregarPDV();
-        }
-
-        async function excluirProduto(id) {
-            if (!confirm('Excluir produto?')) return;
-            await sb.from('produtos').delete().eq('id', id);
-            carregarEstoque();
-            carregarPDV();
-        }
-
-        function gerarRelatorioFinanceiroPDF() { window.print(); }
     </script>
 </body>
 </html>
