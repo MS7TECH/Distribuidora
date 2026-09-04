@@ -261,7 +261,7 @@
             </div>
         </section>
 
-        <!-- ABA 2: FINANCEIRO (Protegida por 8484) -->
+        <!-- ABA 2: FINANCEIRO -->
         <section id="aba-financeiro" class="hidden space-y-6">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
@@ -375,7 +375,7 @@
             </div>
         </section>
 
-        <!-- ABA 4: RANK DE VENDAS (Protegida por 8484) -->
+        <!-- ABA 4: RANK DE VENDAS -->
         <section id="aba-rank" class="hidden space-y-6">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
@@ -441,7 +441,7 @@
             </div>
         </section>
 
-        <!-- ABA 5: DOCUMENTOS CORPORATIVOS (UPLOAD RESTRITO) -->
+        <!-- ABA 5: DOCUMENTOS CORPORATIVOS -->
         <section id="aba-documentos" class="hidden space-y-6">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
                 <div class="flex justify-between items-center border-b border-slate-100 pb-4">
@@ -1384,10 +1384,12 @@
             const payload = { codigo_barras, nome, categoria, estoque, validade, preco_custo, preco_venda };
             if (nota_fiscal) payload.nota_fiscal = nota_fiscal;
 
-            if (id) {
-                await sb.from('produtos').update(payload).eq('id', id);
+            if (id && id !== "") {
+                const { error } = await sb.from('produtos').update(payload).eq('id', Number(id));
+                if (error) { alert('Erro ao atualizar produto.'); return; }
             } else {
-                await sb.from('produtos').insert([payload]);
+                const { error } = await sb.from('produtos').insert([payload]);
+                if (error) { alert('Erro ao cadastrar produto.'); return; }
             }
 
             fecharModalProduto();
@@ -1406,62 +1408,70 @@
             document.getElementById('input-categoria').value = prod.categoria || 'Cervejas';
             document.getElementById('input-qtd').value = prod.estoque ?? 0;
             document.getElementById('input-validade').value = prod.validade || '';
-            document.getElementById('input-custo').value = prod.preco_custo || '';
-            document.getElementById('input-venda').value = prod.preco_venda || '';
-            document.getElementById('input-nf-base64').value = prod.nota_fiscal || '';
+            document.getElementById('input-custo').value = prod.preco_custo || 0;
+            document.getElementById('input-venda').value = prod.preco_venda || 0;
             document.getElementById('modal-produto').classList.remove('hidden');
         }
 
         async function excluirProduto(id) {
-            if (!confirm('Deseja excluir este produto do estoque?')) return;
+            if (!confirm('Deseja excluir este produto permanentemente?')) return;
             await sb.from('produtos').delete().eq('id', id);
             carregarEstoque();
             carregarPDV();
         }
 
-        function verNotaFiscal(base64Url) {
-            const urlDecodificada = decodeURIComponent(base64Url);
+        function verNotaFiscal(base64Encoded) {
+            const base64 = decodeURIComponent(base64Encoded);
             const container = document.getElementById('container-conteudo-nf');
-            if (urlDecodificada.startsWith('data:image')) {
-                container.innerHTML = `<img src="${urlDecodificada}" class="max-w-full rounded-lg shadow-md" />`;
+            if (base64.startsWith('data:image')) {
+                container.innerHTML = `<img src="${base64}" class="max-h-[50vh] object-contain rounded-xl border">`;
             } else {
-                container.innerHTML = `<iframe src="${urlDecodificada}" class="w-full h-[50vh] rounded-lg border"></iframe>`;
+                container.innerHTML = `<iframe src="${base64}" class="w-full h-[50vh] border rounded-xl"></iframe>`;
             }
             document.getElementById('modal-ver-nf').classList.remove('hidden');
         }
+
         function fecharModalNF() { document.getElementById('modal-ver-nf').classList.add('hidden'); }
 
-        // --- FINANCEIRO ---
+        // --- MÓDULO FINANCEIRO ---
         async function carregarFinanceiro() {
             const { data, error } = await sb.from('financeiro').select('*').order('id', { ascending: false });
-            if (error) return;
-            let totalEntrada = 0, totalSaida = 0;
+            if (error || !data) return;
+
+            let entrada = 0, saida = 0;
+            data.forEach(m => {
+                const val = Number(m.valor || 0);
+                if (m.tipo === 'entrada') entrada += val;
+                else saida += val;
+            });
+            const lucro = entrada - saida;
+
+            document.getElementById('card-entrada').textContent = `R$ ${entrada.toFixed(2).replace('.', ',')}`;
+            document.getElementById('card-saida').textContent = `R$ ${saida.toFixed(2).replace('.', ',')}`;
+            document.getElementById('card-lucro').textContent = `R$ ${lucro.toFixed(2).replace('.', ',')}`;
+
             const tbody = document.getElementById('tabela-financeiro');
-            if(!tbody) return;
             tbody.innerHTML = '';
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum lançamento financeiro registrado.</td></tr>`;
+                return;
+            }
 
-            (data || []).forEach(item => {
-                const val = Number(item.valor || 0);
-                if (item.tipo === 'entrada') totalEntrada += val;
-                else totalSaida += val;
-
+            data.forEach(item => {
+                const corTipo = item.tipo === 'entrada' ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50';
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
-                        <td class="p-4 text-slate-500">${new Date(item.created_at || Date.now()).toLocaleDateString('pt-BR')}</td>
-                        <td class="p-4 font-bold ${item.tipo === 'entrada' ? 'text-emerald-600' : 'text-red-600'} uppercase">${item.tipo}</td>
+                        <td class="p-4 text-slate-500">${item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : 'Recente'}</td>
+                        <td class="p-4"><span class="px-2.5 py-1 rounded-full font-bold uppercase text-[10px] ${corTipo}">${item.tipo}</span></td>
                         <td class="p-4 font-bold text-slate-900">${item.descricao}</td>
                         <td class="p-4 text-slate-500">${item.categoria}</td>
-                        <td class="p-4 text-right font-extrabold ${item.tipo === 'entrada' ? 'text-emerald-600' : 'text-red-600'}">R$ ${val.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 text-right font-extrabold ${item.tipo === 'entrada' ? 'text-emerald-600' : 'text-red-600'}">R$ ${Number(item.valor || 0).toFixed(2).replace('.', ',')}</td>
                         <td class="p-4 text-center">
-                            <button onclick="excluirLancamento(${item.id})" class="text-slate-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="excluirLancamento(${item.id})" class="text-slate-400 hover:text-red-600 p-1"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
             });
-
-            document.getElementById('card-entrada').textContent = `R$ ${totalEntrada.toFixed(2).replace('.', ',')}`;
-            document.getElementById('card-saida').textContent = `R$ ${totalSaida.toFixed(2).replace('.', ',')}`;
-            document.getElementById('card-lucro').textContent = `R$ ${(totalEntrada - totalSaida).toFixed(2).replace('.', ',')}`;
         }
 
         function abrirModalFinanceiro() { document.getElementById('modal-financeiro').classList.remove('hidden'); }
@@ -1469,14 +1479,18 @@
 
         async function salvarLancamento() {
             const tipo = document.getElementById('lanc-tipo').value;
-            const descricao = document.getElementById('lanc-desc').value;
+            const descricao = document.getElementById('lanc-desc').value.trim();
             const categoria = document.getElementById('lanc-cat').value;
             const valor = parseFloat(document.getElementById('lanc-valor').value) || 0;
 
-            if (!descricao || valor <= 0) { alert('Preencha a descrição e o valor!'); return; }
+            if (!descricao || valor <= 0) { alert('Preencha a descrição e um valor válido!'); return; }
+
             await sb.from('financeiro').insert([{ tipo, descricao, categoria, valor }]);
             fecharModalFinanceiro();
+            document.getElementById('lanc-desc').value = '';
+            document.getElementById('lanc-valor').value = '';
             carregarFinanceiro();
+            alert('Lançamento salvo!');
         }
 
         async function excluirLancamento(id) {
@@ -1484,14 +1498,6 @@
             await sb.from('financeiro').delete().eq('id', id);
             carregarFinanceiro();
         }
-
-        function alternarTipoFiltroPeriodo() {
-            const tipo = document.getElementById('filtro-tipo-periodo').value;
-            document.getElementById('bloco-filtro-mes').classList.toggle('hidden', tipo !== 'mes');
-            document.getElementById('bloco-filtro-custom').classList.toggle('hidden', tipo !== 'custom');
-        }
-
-        function gerarRelatorioFinanceiroPDF() { window.print(); }
 
         // --- RANK DE VENDAS ---
         async function carregarRankVendas() {
@@ -1503,16 +1509,18 @@
             let faturamentoTotalGeral = 0;
 
             itens.forEach(i => {
-                const nome = i.nome_produto;
-                if (!agrupado[nome]) {
-                    agrupado[nome] = { qtd: 0, faturamento: 0, lucro: 0 };
-                }
-                agrupado[nome].qtd += Number(i.qtd || 0);
-                agrupado[nome].faturamento += Number(i.subtotal || 0);
-                agrupado[nome].lucro += Number(i.lucro_total || 0);
+                const nome = i.nome_produto || 'Produto';
+                const qtd = Number(i.qtd || 0);
+                const subtotal = Number(i.subtotal || 0);
+                const lucro = Number(i.lucro_total || 0);
 
-                qtdTotalGeral += Number(i.qtd || 0);
-                faturamentoTotalGeral += Number(i.subtotal || 0);
+                qtdTotalGeral += qtd;
+                faturamentoTotalGeral += subtotal;
+
+                if (!agrupado[nome]) agrupado[nome] = { qtd: 0, faturamento: 0, lucro: 0 };
+                agrupado[nome].qtd += qtd;
+                agrupado[nome].faturamento += subtotal;
+                agrupado[nome].lucro += lucro;
             });
 
             let arrayRank = Object.keys(agrupado).map(nome => ({
@@ -1522,45 +1530,35 @@
                 lucro: agrupado[nome].lucro
             })).sort((a, b) => b.qtd - a.qtd);
 
-            if (arrayRank.length > 0) {
-                document.getElementById('rank-card-campeao').textContent = arrayRank[0].nome;
-            } else {
-                document.getElementById('rank-card-campeao').textContent = 'Nenhum';
-            }
-
             document.getElementById('rank-card-qtd-total').textContent = `${qtdTotalGeral} un`;
             document.getElementById('rank-card-faturamento').textContent = `R$ ${faturamentoTotalGeral.toFixed(2).replace('.', ',')}`;
+            if (arrayRank.length > 0) {
+                document.getElementById('rank-card-campeao').textContent = arrayRank[0].nome;
+            }
 
             const tbody = document.getElementById('tabela-rank');
-            if(!tbody) return;
             tbody.innerHTML = '';
-
             if (arrayRank.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum dado de vendas registrado para o rank.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum dado de venda para o rank.</td></tr>`;
                 return;
             }
 
             arrayRank.forEach((item, index) => {
-                let badgePos = `<span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold flex items-center justify-center mx-auto">${index + 1}º</span>`;
-                if (index === 0) badgePos = `<span class="w-7 h-7 rounded-full bg-amber-100 text-amber-600 font-bold flex items-center justify-center mx-auto">1º</span>`;
-                else if (index === 1) badgePos = `<span class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center mx-auto">2º</span>`;
-                else if (index === 2) badgePos = `<span class="w-7 h-7 rounded-full bg-amber-50 text-amber-700 font-bold flex items-center justify-center mx-auto">3º</span>`;
+                let badgePos = `<span class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold inline-flex items-center justify-center">${index + 1}º</span>`;
+                if (index === 0) badgePos = `<span class="w-7 h-7 rounded-full bg-amber-100 text-amber-600 font-bold inline-flex items-center justify-center"><i class="fa-solid fa-trophy"></i></span>`;
+                else if (index === 1) badgePos = `<span class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-bold inline-flex items-center justify-center">2º</span>`;
+                else if (index === 2) badgePos = `<span class="w-7 h-7 rounded-full bg-amber-50 text-amber-800 font-bold inline-flex items-center justify-center">3º</span>`;
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition">
                         <td class="p-4 text-center">${badgePos}</td>
                         <td class="p-4 font-bold text-slate-900">${item.nome}</td>
                         <td class="p-4 text-center font-extrabold text-indigo-600">${item.qtd} un</td>
-                        <td class="p-4 text-right font-bold text-slate-800">R$ ${item.faturamento.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 text-right font-extrabold text-slate-800">R$ ${item.faturamento.toFixed(2).replace('.', ',')}</td>
                         <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${item.lucro.toFixed(2).replace('.', ',')}</td>
                     </tr>
                 `;
             });
-        }
-
-        function alternarFiltroRank() {
-            const tipo = document.getElementById('rank-filtro-tipo').value;
-            document.getElementById('rank-bloco-mes').classList.toggle('hidden', tipo !== 'mes');
         }
     </script>
 </body>
