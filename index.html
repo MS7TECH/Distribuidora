@@ -209,7 +209,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Dinheiro Real Contado na Gaveta (R$)</label>
-                            <input type="number" id="fc-dinheiro-gaveta" step="0.01" placeholder="0.00" oninput="calcularDiferencaCaixa()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-extrabold text-slate-900 bg-white focus:outline-none focus:border-emerald-600">
+                            <input type="text" id="fc-dinheiro-gaveta" placeholder="0,00" inputmode="decimal" oninput="formatarMoedaInput(this); calcularDiferencaCaixa()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-extrabold text-slate-900 bg-white focus:outline-none focus:border-emerald-600">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Observações / Troco Inicial</label>
@@ -496,7 +496,7 @@
             </div>
             <div class="space-y-1">
                 <label class="block text-xs font-bold text-slate-700">Quanto o cliente deu em dinheiro?</label>
-                <input type="number" id="input-recebido" step="0.01" placeholder="Ex: 50.00" oninput="calcularTroco()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-emerald-600 text-base font-bold text-slate-800 bg-slate-50">
+                <input type="text" id="input-recebido" placeholder="0,00" inputmode="decimal" oninput="formatarMoedaInput(this); calcularTroco()" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-emerald-600 text-base font-bold text-slate-800 bg-slate-50">
             </div>
             <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl space-y-1">
                 <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider block">Troco a devolver:</span>
@@ -538,7 +538,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Valor (R$)</label>
-                        <input type="number" id="lanc-valor" step="0.01" placeholder="0.00" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                        <input type="text" id="lanc-valor" placeholder="0,00" inputmode="decimal" oninput="formatarMoedaInput(this)" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
                     </div>
                 </div>
             </div>
@@ -596,11 +596,11 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Preço Custo (R$)</label>
-                        <input type="number" id="input-custo" step="0.01" placeholder="0.00" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                        <input type="text" id="input-custo" placeholder="0,00" inputmode="decimal" oninput="formatarMoedaInput(this)" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Preço Venda (R$)</label>
-                        <input type="number" id="input-venda" step="0.01" placeholder="0.00" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
+                        <input type="text" id="input-venda" placeholder="0,00" inputmode="decimal" oninput="formatarMoedaInput(this)" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold bg-slate-50">
                     </div>
                 </div>
             </div>
@@ -633,6 +633,35 @@
         let valorTotalGlobal = 0;
         let isProcessandoVenda = false;
         let totaisFechamentoDia = { pix: 0, cartao: 0, dinheiro: 0, fiado: 0 };
+
+        // Converte valor em formato brasileiro (1.234,56 ou 1234,56 ou 1234.56) para número
+        function parseMoedaBR(valorStr) {
+            if (!valorStr) return 0;
+            let str = String(valorStr).trim().replace(/[^\d,.-]/g, '');
+            if (!str) return 0;
+            // Se tem vírgula, trata como decimal brasileiro (remove pontos de milhar)
+            if (str.includes(',')) {
+                str = str.replace(/\./g, '').replace(',', '.');
+            }
+            // Se só tem ponto, assume que é decimal (padrão JS)
+            return parseFloat(str) || 0;
+        }
+
+        // Formatação em tempo real estilo calculadora (digita e já aparece 1.234,56)
+        function formatarMoedaInput(input) {
+            let v = input.value.replace(/\D/g, '');
+            if (!v) {
+                input.value = '';
+                return;
+            }
+            const num = parseInt(v, 10) / 100;
+            input.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Formata número para exibição no padrão brasileiro (10.207,47)
+        function formatarMoeda(valor) {
+            return Number(valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
 
         function atualizarRelogio() {
             const agora = new Date();
@@ -805,23 +834,23 @@
 
             totaisFechamentoDia = { pix: p, cartao: c, dinheiro: d, fiado: f };
 
-            document.getElementById('fc-total-pix').textContent = `R$ ${p.toFixed(2).replace('.', ',')}`;
-            document.getElementById('fc-total-cartao').textContent = `R$ ${c.toFixed(2).replace('.', ',')}`;
-            document.getElementById('fc-total-dinheiro').textContent = `R$ ${d.toFixed(2).replace('.', ',')}`;
-            document.getElementById('fc-total-fiado').textContent = `R$ ${f.toFixed(2).replace('.', ',')}`;
-            document.getElementById('fc-resumo-esperado').textContent = `R$ ${d.toFixed(2).replace('.', ',')}`;
+            document.getElementById('fc-total-pix').textContent = `R$ ${p.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('fc-total-cartao').textContent = `R$ ${c.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('fc-total-dinheiro').textContent = `R$ ${d.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('fc-total-fiado').textContent = `R$ ${f.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('fc-resumo-esperado').textContent = `R$ ${d.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             calcularDiferencaCaixa();
             carregarHistoricoFechamentos();
         }
 
         function calcularDiferencaCaixa() {
             const esperado = totaisFechamentoDia.dinheiro;
-            const informado = parseFloat(document.getElementById('fc-dinheiro-gaveta').value) || 0;
+            const informado = parseMoedaBR(document.getElementById('fc-dinheiro-gaveta').value);
             const diferenca = informado - esperado;
 
-            document.getElementById('fc-resumo-informado').textContent = `R$ ${informado.toFixed(2).replace('.', ',')}`;
+            document.getElementById('fc-resumo-informado').textContent = `R$ ${informado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             const difEl = document.getElementById('fc-resumo-diferenca');
-            difEl.textContent = `R$ ${diferenca.toFixed(2).replace('.', ',')}`;
+            difEl.textContent = `R$ ${diferenca.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             
             if (diferenca < 0) difEl.className = 'font-black text-red-600';
             else if (diferenca > 0) difEl.className = 'font-black text-indigo-600';
@@ -830,7 +859,7 @@
 
         async function salvarFechamentoCaixa() {
             const operador = document.getElementById('fc-operador').value.trim();
-            const dinheiroGaveta = parseFloat(document.getElementById('fc-dinheiro-gaveta').value) || 0;
+            const dinheiroGaveta = parseMoedaBR(document.getElementById('fc-dinheiro-gaveta').value);
             const observacoes = document.getElementById('fc-obs').value.trim();
 
             if (!operador) { alert('Informe o nome do operador responsável pelo caixa!'); return; }
@@ -877,9 +906,9 @@
                     <tr class="hover:bg-slate-50 transition">
                         <td class="p-3 text-slate-500">${dataFmt}</td>
                         <td class="p-3 font-bold text-slate-900">${item.operador}</td>
-                        <td class="p-3 text-right font-semibold text-emerald-600">R$ ${dinGaveta.toFixed(2).replace('.', ',')}</td>
-                        <td class="p-3 text-right font-semibold text-indigo-600">R$ ${pixCartao.toFixed(2).replace('.', ',')}</td>
-                        <td class="p-3 text-right font-extrabold text-slate-900">R$ ${totalGeral.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-3 text-right font-semibold text-emerald-600">R$ ${dinGaveta.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td class="p-3 text-right font-semibold text-indigo-600">R$ ${pixCartao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td class="p-3 text-right font-extrabold text-slate-900">R$ ${totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td class="p-3 text-center">
                             <button onclick="excluirFechamento(${item.id})" class="text-slate-400 hover:text-red-600 p-1" title="Excluir"><i class="fa-solid fa-trash"></i></button>
                         </td>
@@ -973,7 +1002,7 @@
                             <span class="text-[10px] text-slate-400">${qtd} em estoque</span>
                         </div>
                         <div class="flex justify-between items-center w-full">
-                            <span class="text-xs font-extrabold text-indigo-600">R$ ${preco.toFixed(2).replace('.', ',')}</span>
+                            <span class="text-xs font-extrabold text-indigo-600">R$ ${preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             <i class="fa-solid fa-plus text-xs text-slate-400 group-hover:text-indigo-600"></i>
                         </div>
                     </button>
@@ -1037,20 +1066,20 @@
 
                 html += `
                     <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
-                        <div class="w-2/5"><span class="font-bold text-slate-700 block truncate">${item.nome}</span><span class="text-slate-400">R$ ${item.preco.toFixed(2).replace('.', ',')} un</span></div>
+                        <div class="w-2/5"><span class="font-bold text-slate-700 block truncate">${item.nome}</span><span class="text-slate-400">R$ ${item.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} un</span></div>
                         <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-2 py-1 rounded-lg">
                             <button onclick="alterarQtd(${index}, -1)" class="text-slate-500 hover:text-red-600 font-bold px-1">-</button>
                             <span class="font-bold text-slate-800 w-5 text-center">${item.qtd}</span>
                             <button onclick="alterarQtd(${index}, 1)" class="text-slate-500 hover:text-indigo-600 font-bold px-1">+</button>
                         </div>
-                        <div class="text-right"><span class="font-extrabold text-slate-800 block">R$ ${subtotal.toFixed(2).replace('.', ',')}</span></div>
+                        <div class="text-right"><span class="font-extrabold text-slate-800 block">R$ ${subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
                     </div>
                 `;
             });
 
             lista.innerHTML = html;
             contador.textContent = `${totalItens} ${totalItens === 1 ? 'item' : 'itens'}`;
-            totalEl.textContent = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
+            totalEl.textContent = `R$ ${totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             valorTotalGlobal = totalGeral;
         }
 
@@ -1080,7 +1109,7 @@
                 <tr>
                     <td style="padding: 3px 0; text-align: left;">${i.nome}</td>
                     <td style="padding: 3px 0; text-align: center;">${i.qtd}x</td>
-                    <td style="padding: 3px 0; text-align: right;">R$ ${(i.preco * i.qtd).toFixed(2).replace('.', ',')}</td>
+                    <td style="padding: 3px 0; text-align: right;">R$ ${(i.preco * i.qtd).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
             `).join('');
             
@@ -1124,7 +1153,7 @@
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: 5px;" class="bold">
                         <span>TOTAL A PAGAR:</span>
-                        <span>R$ ${total.toFixed(2).replace('.', ',')}</span>
+                        <span>R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div class="line"></div>
                     <div class="center" style="font-size: 10px; margin-top: 8px;">DOCUMENTO NÃO FISCAL</div>
@@ -1160,7 +1189,7 @@
         }
 
         function abrirModalDinheiro() {
-            document.getElementById('modal-valor-total').textContent = `R$ ${valorTotalGlobal.toFixed(2).replace('.', ',')}`;
+            document.getElementById('modal-valor-total').textContent = `R$ ${valorTotalGlobal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             document.getElementById('input-recebido').value = '';
             document.getElementById('display-troco').textContent = 'R$ 0,00';
             document.getElementById('modal-dinheiro').classList.remove('hidden');
@@ -1168,16 +1197,16 @@
         function fecharModalDinheiro() { document.getElementById('modal-dinheiro').classList.add('hidden'); }
 
         function calcularTroco() {
-            const recebido = parseFloat(document.getElementById('input-recebido').value) || 0;
+            const recebido = parseMoedaBR(document.getElementById('input-recebido').value);
             const troco = recebido - valorTotalGlobal;
             const display = document.getElementById('display-troco');
-            if (troco >= 0) { display.textContent = `R$ ${troco.toFixed(2).replace('.', ',')}`; display.className = 'text-2xl font-black text-emerald-600'; }
-            else { display.textContent = `Falta: R$ ${Math.abs(troco).toFixed(2).replace('.', ',')}`; display.className = 'text-2xl font-black text-red-500'; }
+            if (troco >= 0) { display.textContent = `R$ ${troco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; display.className = 'text-2xl font-black text-emerald-600'; }
+            else { display.textContent = `Falta: R$ ${Math.abs(troco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; display.className = 'text-2xl font-black text-red-500'; }
         }
 
         async function confirmarDinheiro() {
             if (isProcessandoVenda) return;
-            const recebido = parseFloat(document.getElementById('input-recebido').value) || 0;
+            const recebido = parseMoedaBR(document.getElementById('input-recebido').value);
             if (recebido < valorTotalGlobal) { alert('Valor recebido menor que o total!'); return; }
             
             isProcessandoVenda = true;
@@ -1252,7 +1281,7 @@
                         <td class="p-4 font-bold text-slate-900">#${venda.venda_id}</td>
                         <td class="p-4 text-slate-500">${dataFmt}</td>
                         <td class="p-4 font-semibold text-slate-700">${venda.forma_pagamento || 'Dinheiro'}</td>
-                        <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${valorTotal.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td class="p-4 text-center">
                             <button onclick="baixarSegundaVia('${venda.venda_id}')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center justify-center gap-1.5 mx-auto">
                                 <i class="fa-solid fa-receipt"></i> 2ª Via do Cliente
@@ -1268,9 +1297,9 @@
             if (!venda) return;
             const dataRef = venda.data_hora || venda.created_at;
             const dataFmt = dataRef ? new Date(dataRef).toLocaleString('pt-BR') : '--/--/---- --:--';
-            const valorTotal = Number(venda.total || 0).toFixed(2).replace('.', ',');
+            const valorTotal = Number(venda.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             const itensVendaAtual = itensVendasGlobal.filter(i => String(i.venda_id) === String(venda.venda_id));
-            let itensHtml = itensVendaAtual.map(i => `<tr><td style="padding: 3px 0;">${i.nome_produto}</td><td style="text-align:center; padding: 3px 0;">${i.qtd}x</td><td style="text-align:right; padding: 3px 0;">R$ ${Number(i.subtotal || 0).toFixed(2).replace('.', ',')}</td></tr>`).join('');
+            let itensHtml = itensVendaAtual.map(i => `<tr><td style="padding: 3px 0;">${i.nome_produto}</td><td style="text-align:center; padding: 3px 0;">${i.qtd}x</td><td style="text-align:right; padding: 3px 0;">R$ ${Number(i.subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td></tr>`).join('');
 
             const janela = window.open('', '_blank', 'width=420,height=700');
             janela.document.write(`
@@ -1309,8 +1338,8 @@
                 return;
             }
             lista.forEach(prod => {
-                const custo = Number(prod.preco_custo || 0).toFixed(2).replace('.', ',');
-                const venda = Number(prod.preco_venda || 0).toFixed(2).replace('.', ',');
+                const custo = Number(prod.preco_custo || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const venda = Number(prod.preco_venda || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 const qtd = prod.estoque ?? 0;
                 let statusBadge = `<span class="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full font-bold">Disponível</span>`;
                 if (qtd <= 0) statusBadge = `<span class="bg-red-50 text-red-600 px-2 py-1 rounded-full font-bold">Esgotado</span>`;
@@ -1375,8 +1404,8 @@
             const categoria = document.getElementById('input-categoria').value;
             const estoque = parseInt(document.getElementById('input-qtd').value) || 0;
             const validade = document.getElementById('input-validade').value;
-            const preco_custo = parseFloat(document.getElementById('input-custo').value) || 0;
-            const preco_venda = parseFloat(document.getElementById('input-venda').value) || 0;
+            const preco_custo = parseMoedaBR(document.getElementById('input-custo').value);
+            const preco_venda = parseMoedaBR(document.getElementById('input-venda').value);
             const nota_fiscal = document.getElementById('input-nf-base64').value;
 
             if (!nome || preco_venda <= 0) { alert('Preencha o nome do produto e o preço de venda!'); return; }
@@ -1446,9 +1475,9 @@
             });
             const lucro = entrada - saida;
 
-            document.getElementById('card-entrada').textContent = `R$ ${entrada.toFixed(2).replace('.', ',')}`;
-            document.getElementById('card-saida').textContent = `R$ ${saida.toFixed(2).replace('.', ',')}`;
-            document.getElementById('card-lucro').textContent = `R$ ${lucro.toFixed(2).replace('.', ',')}`;
+            document.getElementById('card-entrada').textContent = `R$ ${entrada.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('card-saida').textContent = `R$ ${saida.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('card-lucro').textContent = `R$ ${lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
             const tbody = document.getElementById('tabela-financeiro');
             tbody.innerHTML = '';
@@ -1465,7 +1494,7 @@
                         <td class="p-4"><span class="px-2.5 py-1 rounded-full font-bold uppercase text-[10px] ${corTipo}">${item.tipo}</span></td>
                         <td class="p-4 font-bold text-slate-900">${item.descricao}</td>
                         <td class="p-4 text-slate-500">${item.categoria}</td>
-                        <td class="p-4 text-right font-extrabold ${item.tipo === 'entrada' ? 'text-emerald-600' : 'text-red-600'}">R$ ${Number(item.valor || 0).toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 text-right font-extrabold ${item.tipo === 'entrada' ? 'text-emerald-600' : 'text-red-600'}">R$ ${Number(item.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td class="p-4 text-center">
                             <button onclick="excluirLancamento(${item.id})" class="text-slate-400 hover:text-red-600 p-1"><i class="fa-solid fa-trash"></i></button>
                         </td>
@@ -1481,7 +1510,7 @@
             const tipo = document.getElementById('lanc-tipo').value;
             const descricao = document.getElementById('lanc-desc').value.trim();
             const categoria = document.getElementById('lanc-cat').value;
-            const valor = parseFloat(document.getElementById('lanc-valor').value) || 0;
+            const valor = parseMoedaBR(document.getElementById('lanc-valor').value);
 
             if (!descricao || valor <= 0) { alert('Preencha a descrição e um valor válido!'); return; }
 
@@ -1531,7 +1560,7 @@
             })).sort((a, b) => b.qtd - a.qtd);
 
             document.getElementById('rank-card-qtd-total').textContent = `${qtdTotalGeral} un`;
-            document.getElementById('rank-card-faturamento').textContent = `R$ ${faturamentoTotalGeral.toFixed(2).replace('.', ',')}`;
+            document.getElementById('rank-card-faturamento').textContent = `R$ ${faturamentoTotalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             if (arrayRank.length > 0) {
                 document.getElementById('rank-card-campeao').textContent = arrayRank[0].nome;
             }
@@ -1554,8 +1583,8 @@
                         <td class="p-4 text-center">${badgePos}</td>
                         <td class="p-4 font-bold text-slate-900">${item.nome}</td>
                         <td class="p-4 text-center font-extrabold text-indigo-600">${item.qtd} un</td>
-                        <td class="p-4 text-right font-extrabold text-slate-800">R$ ${item.faturamento.toFixed(2).replace('.', ',')}</td>
-                        <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${item.lucro.toFixed(2).replace('.', ',')}</td>
+                        <td class="p-4 text-right font-extrabold text-slate-800">R$ ${item.faturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${item.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>
                 `;
             });
