@@ -701,18 +701,47 @@
             const dataHoje = new Date();
             const ano = dataHoje.getFullYear();
             const mes = String(dataHoje.getMonth() + 1).padStart(2, '0');
+            const diaStr = String(dataHoje.getDate()).padStart(2, '0');
             
             ['filtro-mes-ano', 'filtro-mes-vendas', 'rank-mes-ano'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.value = `${ano}-${mes}`;
             });
 
+            // Inicializar inputs custom do financeiro com a data de hoje
+            const inputInicio = document.getElementById('filtro-data-inicio');
+            const inputFim = document.getElementById('filtro-data-fim');
+            if(inputInicio && inputFim) {
+                inputInicio.value = `${ano}-${mes}-01`;
+                inputFim.value = `${ano}-${mes}-${diaStr}`;
+            }
+
             carregarPDV();
             carregarEstoque();
             carregarVendasCaixa();
             carregarDocumentosCorp();
             carregarDadosFechamentoCaixa();
+            alternarTipoFiltroPeriodo();
         });
+
+        // Alternar visibilidade dos filtros na aba Financeiro
+        function alternarTipoFiltroPeriodo() {
+            const tipo = document.getElementById('filtro-tipo-periodo').value;
+            const blocoMes = document.getElementById('bloco-filtro-mes');
+            const blocoCustom = document.getElementById('bloco-filtro-custom');
+
+            if (tipo === 'mes') {
+                blocoMes.classList.remove('hidden');
+                blocoCustom.classList.add('hidden');
+            } else if (tipo === 'custom') {
+                blocoMes.classList.add('hidden');
+                blocoCustom.classList.remove('hidden');
+            } else {
+                blocoMes.classList.add('hidden');
+                blocoCustom.classList.add('hidden');
+            }
+            carregarFinanceiro();
+        }
 
         // Leitor Óptico (USB)
         let codigoBuffer = "";
@@ -1324,8 +1353,33 @@
         function fecharModalNF() { document.getElementById('modal-ver-nf').classList.add('hidden'); }
 
         async function carregarFinanceiro() {
-            const { data } = await sb.from('financeiro').select('*').order('id', { ascending: false });
-            if (!data) return;
+            let query = sb.from('financeiro').select('*').order('created_at', { ascending: false });
+
+            const tipoPeriodo = document.getElementById('filtro-tipo-periodo')?.value || 'geral';
+
+            if (tipoPeriodo === 'mes') {
+                const mesAnoVal = document.getElementById('filtro-mes-ano')?.value; // Formato YYYY-MM
+                if (mesAnoVal) {
+                    const [ano, mes] = mesAnoVal.split('-');
+                    const inicioMes = `${ano}-${mes}-01T00:00:00`;
+                    // Calcular último dia do mês de forma segura
+                    const ultimoDia = new Date(ano, mes, 0).getDate();
+                    const fimMes = `${ano}-${mes}-${ultimoDia}T23:59:59`;
+                    query = query.gte('created_at', inicioMes).lte('created_at', fimMes);
+                }
+            } else if (tipoPeriodo === 'custom') {
+                const dataInicio = document.getElementById('filtro-data-inicio')?.value;
+                const dataFim = document.getElementById('filtro-data-fim')?.value;
+                if (dataInicio) {
+                    query = query.gte('created_at', `${dataInicio}T00:00:00`);
+                }
+                if (dataFim) {
+                    query = query.lte('created_at', `${dataFim}T23:59:59`);
+                }
+            }
+
+            const { data, error } = await query;
+            if (error || !data) return;
 
             let entrada = 0, saida = 0;
             data.forEach(m => m.tipo === 'entrada' ? entrada += Number(m.valor || 0) : saida += Number(m.valor || 0));
@@ -1335,7 +1389,7 @@
             document.getElementById('card-lucro').textContent = `R$ ${(entrada - saida).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
             const tbody = document.getElementById('tabela-financeiro');
-            if (!data.length) { tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum lançamento.</td></tr>`; return; }
+            if (!data.length) { tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum lançamento encontrado para o período selecionado.</td></tr>`; return; }
 
             tbody.innerHTML = data.map(item => `
                 <tr class="hover:bg-slate-50 transition">
@@ -1349,6 +1403,13 @@
             `).join('');
         }
 
+        async function excluirLancamento(id) {
+            if (confirm('Deseja excluir este lançamento financeiro?')) {
+                await sb.from('financeiro').delete().eq('id', id);
+                carregarFinanceiro();
+            }
+        }
+
         function abrirModalFinanceiro() { document.getElementById('modal-financeiro').classList.remove('hidden'); }
         function fecharModalFinanceiro() { document.getElementById('modal-financeiro').classList.add('hidden'); }
 
@@ -1358,49 +1419,98 @@
             if (!descricao || valor <= 0) { alert('Preencha os campos corretamente.'); return; }
             await sb.from('financeiro').insert([{ tipo: document.getElementById('lanc-tipo').value, descricao, categoria: document.getElementById('lanc-cat').value, valor }]);
             fecharModalFinanceiro();
-            document.getElementById('lanc-desc').value = '';
-            document.getElementById('lanc-valor').value = '';
             carregarFinanceiro();
+            alert('Lançamento salvo com sucesso!');
         }
 
-        async function excluirLancamento(id) {
-            if (confirm('Excluir?')) { await sb.from('financeiro').delete().eq('id', id); carregarFinanceiro(); }
+        function gerarRelatorioFinanceiroPDF() {
+            window.print();
+        }
+
+        // Rank de Vendas
+        function alternarFiltroRank() {
+            const tipo = document.getElementById('rank-filtro-tipo').value;
+            const blocoMes = document.getElementById('rank-bloco-mes');
+            if (tipo === 'mes') blocoMes.classList.remove('hidden');
+            else blocoMes.classList.add('hidden');
+            carregarRankVendas();
         }
 
         async function carregarRankVendas() {
-            const { data: itens } = await sb.from('itens_venda').select('*');
-            if (!itens) return;
+            const [resItens, resVendas] = await Promise.all([
+                sb.from('itens_venda').select('*'),
+                sb.from('vendas').select('*')
+            ]);
+            const itens = resItens.data || [];
+            const vendas = resVendas.data || [];
 
-            let agrupado = {}, qtdTotalGeral = 0, faturamentoTotalGeral = 0;
-            itens.forEach(i => {
-                const nome = i.nome_produto || 'Produto';
-                const qtd = Number(i.qtd || 0), subtotal = Number(i.subtotal || 0), lucro = Number(i.lucro_total || 0);
-                qtdTotalGeral += qtd;
-                faturamentoTotalGeral += subtotal;
-                if (!agrupado[nome]) agrupado[nome] = { qtd: 0, faturamento: 0, lucro: 0 };
-                agrupado[nome].qtd += qtd;
-                agrupado[nome].faturamento += subtotal;
-                agrupado[nome].lucro += lucro;
+            const tipoFiltro = document.getElementById('rank-filtro-tipo')?.value || 'geral';
+            const mesAnoVal = document.getElementById('rank-mes-ano')?.value;
+
+            let vendasValidasIds = new Set();
+            vendas.forEach(v => {
+                const dataVenda = v.data_hora || v.created_at || '';
+                if (tipoFiltro === 'mes' && mesAnoVal) {
+                    if (dataVenda.startsWith(mesAnoVal)) vendasValidasIds.add(String(v.venda_id));
+                } else {
+                    vendasValidasIds.add(String(v.venda_id));
+                }
             });
 
-            const arrayRank = Object.keys(agrupado).map(nome => ({ nome, ...agrupado[nome] })).sort((a, b) => b.qtd - a.qtd);
+            let agrupado = {};
+            let totalQtdGeral = 0;
+            let totalFaturamentoGeral = 0;
 
-            document.getElementById('rank-card-qtd-total').textContent = `${qtdTotalGeral} un`;
-            document.getElementById('rank-card-faturamento').textContent = `R$ ${faturamentoTotalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-            if (arrayRank.length) document.getElementById('rank-card-campeao').textContent = arrayRank[0].nome;
+            itens.forEach(i => {
+                if (vendasValidasIds.has(String(i.venda_id))) {
+                    const nome = i.nome_produto || 'Desconhecido';
+                    if (!agrupado[nome]) {
+                        agrupado[nome] = { qtd: 0, faturamento: 0, lucro: 0 };
+                    }
+                    agrupado[nome].qtd += Number(i.qtd || 0);
+                    agrupado[nome].faturamento += Number(i.subtotal || 0);
+                    agrupado[nome].lucro += Number(i.lucro_total || 0);
+
+                    totalQtdGeral += Number(i.qtd || 0);
+                    totalFaturamentoGeral += Number(i.subtotal || 0);
+                }
+            });
+
+            let arrayRank = Object.keys(agrupado).map(nome => ({
+                nome,
+                qtd: agrupado[nome].qtd,
+                faturamento: agrupado[nome].faturamento,
+                lucro: agrupado[nome].lucro
+            })).sort((a, b) => b.qtd - a.qtd);
+
+            // Atualizar Cards
+            document.getElementById('rank-card-campeao').textContent = arrayRank.length > 0 ? arrayRank[0].nome : 'Nenhum';
+            document.getElementById('rank-card-qtd-total').textContent = `${totalQtdGeral} un`;
+            document.getElementById('rank-card-faturamento').textContent = `R$ ${totalFaturamentoGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
             const tbody = document.getElementById('tabela-rank');
-            if (!arrayRank.length) { tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum dado.</td></tr>`; return; }
+            if(!tbody) return;
+            if (!arrayRank.length) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum dado de vendas para o período.</td></tr>`;
+                return;
+            }
 
-            tbody.innerHTML = arrayRank.map((item, index) => `
-                <tr class="hover:bg-slate-50 transition">
-                    <td class="p-4 text-center"><span class="w-7 h-7 rounded-full ${index === 0 ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-600'} font-bold inline-flex items-center justify-center">${index === 0 ? '<i class="fa-solid fa-trophy"></i>' : (index + 1 + 'º')}</span></td>
-                    <td class="p-4 font-bold text-slate-900">${item.nome}</td>
-                    <td class="p-4 text-center font-extrabold text-indigo-600">${item.qtd} un</td>
-                    <td class="p-4 text-right font-extrabold text-slate-800">R$ ${item.faturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                    <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${item.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = arrayRank.map((item, index) => {
+                let iconePos = `<span class="font-bold text-slate-600">${index + 1}º</span>`;
+                if (index === 0) iconePos = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full font-extrabold text-xs"><i class="fa-solid fa-trophy"></i> 1º</span>`;
+                else if (index === 1) iconePos = `<span class="bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-extrabold text-xs">2º</span>`;
+                else if (index === 2) iconePos = `<span class="bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full font-extrabold text-xs">3º</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 text-center">${iconePos}</td>
+                        <td class="p-4 font-bold text-slate-900">${item.nome}</td>
+                        <td class="p-4 text-center font-extrabold text-indigo-600">${item.qtd} un</td>
+                        <td class="p-4 text-right font-extrabold text-slate-800">R$ ${item.faturamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td class="p-4 text-right font-extrabold text-emerald-600">R$ ${item.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                `;
+            }).join('');
         }
     </script>
 </body>
